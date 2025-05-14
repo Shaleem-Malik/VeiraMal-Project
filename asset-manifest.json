@@ -1,0 +1,40 @@
+{
+  "files": {
+    "static/js/0.0d77c8e0.chunk.js": "/VeiraMal-Project/static/js/0.0d77c8e0.chunk.js",
+    "static/js/0.0d77c8e0.chunk.js.map": "/VeiraMal-Project/static/js/0.0d77c8e0.chunk.js.map",
+    "main.css": "/VeiraMal-Project/static/css/main.1a3ac7dc.chunk.css",
+    "main.js": "/VeiraMal-Project/static/js/main.70041380.chunk.js",
+    "main.js.map": "/VeiraMal-Project/static/js/main.70041380.chunk.js.map",
+    "runtime-main.js": "/VeiraMal-Project/static/js/runtime-main.2ed58e42.js",
+    "runtime-main.js.map": "/VeiraMal-Project/static/js/runtime-main.2ed58e42.js.map",
+    "static/css/3.25d21128.chunk.css": "/VeiraMal-Project/static/css/3.25d21128.chunk.css",
+    "static/js/3.9b19f5cf.chunk.js": "/VeiraMal-Project/static/js/3.9b19f5cf.chunk.js",
+    "static/js/3.9b19f5cf.chunk.js.map": "/VeiraMal-Project/static/js/3.9b19f5cf.chunk.js.map",
+    "static/js/4.ccc77db6.chunk.js": "/VeiraMal-Project/static/js/4.ccc77db6.chunk.js",
+    "static/js/4.ccc77db6.chunk.js.map": "/VeiraMal-Project/static/js/4.ccc77db6.chunk.js.map",
+    "static/js/5.6f2d75eb.chunk.js": "/VeiraMal-Project/static/js/5.6f2d75eb.chunk.js",
+    "static/js/5.6f2d75eb.chunk.js.map": "/VeiraMal-Project/static/js/5.6f2d75eb.chunk.js.map",
+    "static/js/6.bdcfee4c.chunk.js": "/VeiraMal-Project/static/js/6.bdcfee4c.chunk.js",
+    "static/js/6.bdcfee4c.chunk.js.map": "/VeiraMal-Project/static/js/6.bdcfee4c.chunk.js.map",
+    "static/js/7.3064c3ba.chunk.js": "/VeiraMal-Project/static/js/7.3064c3ba.chunk.js",
+    "static/js/7.3064c3ba.chunk.js.map": "/VeiraMal-Project/static/js/7.3064c3ba.chunk.js.map",
+    "static/js/8.e1e7ad4f.chunk.js": "/VeiraMal-Project/static/js/8.e1e7ad4f.chunk.js",
+    "static/js/8.e1e7ad4f.chunk.js.map": "/VeiraMal-Project/static/js/8.e1e7ad4f.chunk.js.map",
+    "index.html": "/VeiraMal-Project/index.html",
+    "static/css/3.25d21128.chunk.css.map": "/VeiraMal-Project/static/css/3.25d21128.chunk.css.map",
+    "static/css/main.1a3ac7dc.chunk.css.map": "/VeiraMal-Project/static/css/main.1a3ac7dc.chunk.css.map",
+    "static/js/3.9b19f5cf.chunk.js.LICENSE.txt": "/VeiraMal-Project/static/js/3.9b19f5cf.chunk.js.LICENSE.txt",
+    "static/media/_style.scss": "/VeiraMal-Project/static/media/weather-1.46f09779.png",
+    "static/media/notifications.css": "/VeiraMal-Project/static/media/notification.c5d9251e.ttf",
+    "static/media/slick-theme.css": "/VeiraMal-Project/static/media/slick.c94f7671.ttf",
+    "static/media/themify-icons.css": "/VeiraMal-Project/static/media/themify.f0fc8c79.svg",
+    "static/media/weather-icons.min.css": "/VeiraMal-Project/static/media/weathericons-regular-webfont.e4d2c00e.woff"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.2ed58e42.js",
+    "static/css/3.25d21128.chunk.css",
+    "static/js/3.9b19f5cf.chunk.js",
+    "static/css/main.1a3ac7dc.chunk.css",
+    "static/js/main.70041380.chunk.js"
+  ]
+}
