@@ -1,0 +1,2 @@
+(this.webpackJsonpfrontend=this.webpackJsonpfrontend||[]).push([[51],{1334:function(e,t,n){"use strict";n.r(t);var r=n(1),o=n(1159),s=n.n(o),a=n(0);t.default=function(){const[e,t]=Object(r.useState)(200);return Object(r.useEffect)((()=>{setInterval((()=>{t(Math.floor(1e3*Math.random())+1)}),2e3)}),[]),Object(a.jsx)("div",{className:"card",children:Object(a.jsx)(s.a,{value:e,startColor:"red",endColor:"green",height:200,ringWidth:40,needleColor:"#895DFF"})})}}}]);
+//# sourceMappingURL=51.35b33707.chunk.js.map
