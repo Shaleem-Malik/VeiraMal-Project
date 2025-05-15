@@ -33,7 +33,7 @@ const auth = new Auth();
 
 function Signin(props) {
 
-   const [email, setEmail] = useState('demo@example.com');
+   const [email, setEmail] = useState('demo@veiramal.com');
    const [password, setPassword] = useState('test#123');
    const dispatch = useDispatch();
    const loading = useSelector(state => state.loading);
@@ -89,8 +89,8 @@ function Signin(props) {
                      <div className="col-sm-7 col-md-7 col-lg-8">
                         <div className="session-body text-center">
                            <div className="session-head mb-30">
-                              <h2 className="font-weight-bold">Get started with {AppConfig.brandName}</h2>
-                              <p className="mb-0">Most powerful ReactJS admin panel</p>
+                              <h2 className="font-weight-bold">VeiraMal HR Portal</h2>
+                              <p className="mb-0">Most powerful HR Analysis Software</p>
                            </div>
                            <Form>
                               <FormGroup className="has-wrapper">
