@@ -18,18 +18,18 @@ import App from 'Container/App';
 
 import { configureStore } from 'Store';
 
-function MainApp(){
+function MainApp() {
 	return (
 		<Provider store={configureStore()}>
 			<MuiPickersUtilsProvider utils={MomentUtils}>
-				<Router>
+				<Router basename="/VeiraMal-Project">
 					<Switch>
 						<Route path="/" component={App} />
 					</Switch>
 				</Router>
 			</MuiPickersUtilsProvider>
 		</Provider>
-	)
-};
+	);
+}
 
 export default MainApp;

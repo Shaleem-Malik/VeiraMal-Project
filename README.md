@@ -1,70 +1,119 @@
-# Getting Started with Create React App
+## VeiraMal Project
+This is a React-based admin dashboard using the Reactify theme (Redux Thunk variant). It utilizes React, Redux, Material-UI, Bootstrap 4, and Chart.js to create a responsive, customizable admin panel.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 🔧 Tech Stack
+React 18
 
-## Available Scripts
+Redux Thunk
 
-In the project directory, you can run:
+Material-UI
 
-### `npm start`
+Bootstrap 4
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Chart.js (v3+)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Firebase (scaffolded)
 
-### `npm test`
+GitHub Pages for deployment
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 📁 Folder Structure
+This project is based on the reactify-redux-thunk folder from the Reactify theme. After setup, your working directory is:
 
-### `npm run build`
+pgsql
+Copy
+Edit
+VeiraMal-Project/
+└── frontend/
+    ├── public/
+    ├── src/
+    │   ├── actions/
+    │   ├── assets/
+    │   ├── components/
+    │   ├── constants/
+    │   ├── container/
+    │   ├── firebase/
+    │   ├── helpers/
+    │   ├── reducers/
+    │   ├── routes/
+    │   ├── store/
+    │   ├── util/
+    │   ├── App.js
+    │   └── index.js
+    ├── package.json
+    └── README.md
+🚀 Getting Started
+1. Clone the Repository
+bash
+Copy
+Edit
+git clone https://github.com/Shaleem-Malik/VeiraMal-Project.git
+cd VeiraMal-Project/frontend
+2. Install Dependencies
+bash
+Copy
+Edit
+npm install --legacy-peer-deps
+⚠️ Use --legacy-peer-deps to avoid conflicts with older versions of Material-UI and Chart.js.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Start the Development Server
+bash
+Copy
+Edit
+npm start
+Visit your app at:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+arduino
+Copy
+Edit
+http://localhost:3000
+🌐 Deployment (GitHub Pages)
+Ensure the homepage field in package.json is set:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+json
+Copy
+Edit
+"homepage": "https://shaleem-malik.github.io/VeiraMal-Project"
+To Deploy:
+bash
+Copy
+Edit
+npm run build
+npm run deploy
+Your site will be available at:
 
-### `npm run eject`
+arduino
+Copy
+Edit
+https://shaleem-malik.github.io/VeiraMal-Project/
+👥 For Collaborators
+Steps to Contribute:
+bash
+Copy
+Edit
+git clone https://github.com/Shaleem-Malik/VeiraMal-Project.git
+cd VeiraMal-Project/frontend
+npm install --legacy-peer-deps
+npm start
+Make edits in a new branch
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Push changes
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Open a pull request to master
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+✅ Requirements
+Node.js: v16.x or v18.x recommended
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Avoid Node v20+ unless you configure native dependencies properly
 
-## Learn More
+🔐 Auth & Firebase
+Firebase is scaffolded in /src/firebase
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+You can plug in your own Firebase config to enable authentication
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+📊 Charts
+Uses chart.js@^3.9.1 and react-chartjs-2@^3.3.0
 
-### Code Splitting
+Ensure components are updated if upgrading Chart.js to v4+
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+📞 Contact
+For questions, reach out to Shaleem Malik or open an issue on GitHub.
