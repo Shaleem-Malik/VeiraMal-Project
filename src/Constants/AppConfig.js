@@ -3,7 +3,7 @@
  */
 const AppConfig = {
    appLogo: `${process.env.PUBLIC_URL}/assets/images/img/site-logo.png`,          // App Logo
-   brandName: 'Reactify',                                    // Brand Name
+   brandName: 'VeiraMal',                                    // Brand Name
    navCollapsed: false,                                      // Sidebar collapse
    darkMode: false,                                          // Dark Mode
    boxLayout: false,                                         // Box Layout
