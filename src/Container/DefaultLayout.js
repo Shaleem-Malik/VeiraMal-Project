@@ -10,15 +10,21 @@ import RctAppLayout from 'Components/RctAppLayout';
 // router service
 import routerService from "Routes";
 
-function DefaultLayout(props){
+function DefaultLayout(props) {
    const { match } = props;
    return (
       <RctAppLayout>
-         {routerService && routerService.map((route,key)=>
-            <Route key={key} path={`${match.url}/${route.path}`} component={route.component} />
+         {routerService && routerService.map((route, key) =>
+            <Route
+               key={key}
+               exact
+               path={`${match.url}${route.path.startsWith('/') ? '' : '/'}${route.path}`}
+               component={route.component}
+            />
          )}
       </RctAppLayout>
    );
 }
 
 export default withRouter(DefaultLayout);
+
