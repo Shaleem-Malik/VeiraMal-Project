@@ -1,31 +1,26 @@
 /**
-** Session Slider
-**/
+ * Session Slider
+ */
 import React, { useState, useEffect } from "react";
 import Slider from "react-slick";
-
-// api
-import api from 'Api';
+import axios from "axios";
 
 function SessionSlider() {
-   const [sessionUsersData, setSessionUsersData] = useState(null)
+   const [sessionUsersData, setSessionUsersData] = useState([]);
 
    useEffect(() => {
       getSessionUsersData();
-   },[])
-   
-   // session users data
-   const getSessionUsersData = () => {
-      api.get('testimonials.js')
-         .then((response) => {
-            //console.log(response)
-            setSessionUsersData(response.data);
-         })
-         .catch(error => {
-            // error handling
-            console.log(error);
-         })
-   }
+   }, []);
+
+   // Fetch session users data (replace with real endpoint later)
+   const getSessionUsersData = async () => {
+      try {
+         const response = await axios.get('/data/testimonials.json'); // ✅ safer path
+         setSessionUsersData(response.data);
+      } catch (error) {
+         console.error("Error fetching session data:", error);
+      }
+   };
 
    const settings = {
       dots: true,
@@ -40,10 +35,11 @@ function SessionSlider() {
       swipeToSlide: true,
       draggable: true
    };
+
    return (
       <div className="session-slider">
          <Slider {...settings}>
-            {(sessionUsersData && sessionUsersData !== null) && sessionUsersData.map((data, key) => (
+            {sessionUsersData.map((data, key) => (
                <div key={key}>
                   <img
                      src={data.profile}
