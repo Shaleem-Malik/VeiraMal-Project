@@ -4,7 +4,7 @@
  */
 import firebase from 'firebase/app';
 import 'firebase/auth';
-
+import api from 'Api';
 import { NotificationManager } from 'react-notifications';
 import {
    LOGIN_USER,
@@ -19,21 +19,47 @@ import {
 /**
  * Redux Action To Sigin User With Firebase
  */
-export const signinUserInFirebase = (user, history) => (dispatch) => {
+// export const signinUserInFirebase = (user, history) => (dispatch) => {
+//    dispatch({ type: LOGIN_USER });
+//    firebase.auth()
+//       .signInWithEmailAndPassword(user.email, user.password)
+//       .then((user) => {
+//          localStorage.setItem("user_id", "user-id");
+//          dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
+//          history.push('/');
+//          NotificationManager.success('User Login Successfully!');
+//       })
+//       .catch((error) => {
+//          dispatch({ type: LOGIN_USER_FAILURE });
+//          NotificationManager.error(error.message);
+//       });
+// }
+
+export const signinUserInFirebase = (user, history) => async (dispatch) => {
    dispatch({ type: LOGIN_USER });
-   firebase.auth()
-      .signInWithEmailAndPassword(user.email, user.password)
-      .then((user) => {
-         localStorage.setItem("user_id", "user-id");
-         dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
-         history.push('/');
-         NotificationManager.success('User Login Successfully!');
-      })
-      .catch((error) => {
-         dispatch({ type: LOGIN_USER_FAILURE });
-         NotificationManager.error(error.message);
+
+   try {
+      const response = await api.post('Auth/login', {
+         email: user.email,
+         password: user.password,
       });
-}
+
+      const token = response.data.token;
+
+      // Save token and user ID
+      localStorage.setItem('token', token);
+      localStorage.setItem('user_id', user.email); // You can replace this with actual user id if returned
+
+      dispatch({ type: LOGIN_USER_SUCCESS, payload: user.email });
+
+      history.push('/app/dashboard/ecommerce');
+      NotificationManager.success('User Login Successfully!');
+   } catch (error) {
+      console.error('Login error:', error);
+      dispatch({ type: LOGIN_USER_FAILURE });
+      NotificationManager.error(error?.response?.data || 'Login failed');
+   }
+};
 
 /**
  * Redux Action To Signout User From  Firebase

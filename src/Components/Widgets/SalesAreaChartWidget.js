@@ -14,7 +14,7 @@ import { RctCard, RctCardContent } from 'Components/RctCard';
 // helpers
 import { hexToRgbA } from 'Helpers/helpers';
 
-const UsersAreaChart = ({ data }) => (
+const SalesAreaChartWidget = ({ data }) => (
     <RctCard>
         <RctCardContent>
             <div className="clearfix">
@@ -52,4 +52,4 @@ const UsersAreaChart = ({ data }) => (
     </RctCard>
 );
 
-export default UsersAreaChart;
+export default SalesAreaChartWidget;

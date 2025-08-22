@@ -12,7 +12,7 @@ import QueueAnim from 'rc-queue-anim';
 import { Fab } from "@material-ui/core";
 
 // components
-import { SessionSlider } from 'Components/Widgets';
+// import { SessionSlider } from 'Components/Widgets';
 
 // app config
 import AppConfig from 'Constants/AppConfig';
@@ -165,7 +165,7 @@ function Signin(props) {
                         </div>
                      </div>
                      <div className="col-sm-5 col-md-5 col-lg-4">
-                        <SessionSlider />
+                        {/* <SessionSlider /> */}
                      </div>
                   </div>
                </div>

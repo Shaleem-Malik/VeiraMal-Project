@@ -11,6 +11,10 @@ import authUserReducer from './AuthUserReducer';
 import feedbacksReducer from './FeedbacksReducer';
 import ecommerceReducer from './EcommerceReducer';
 import CrmReducer from './CrmReducer';
+import headcountReducer from "../Actions/headcountActions";
+import nhtReducer from "../Actions/nhtActions";
+import termsReducer from "../Actions/termsActions";
+import historyReducer from "./historyReducer";
 
 const Reducers = combineReducers({
    settings,
@@ -21,7 +25,11 @@ const Reducers = combineReducers({
    authUser: authUserReducer,
    feedback: feedbacksReducer,
    ecommerce: ecommerceReducer,
-   CrmReducer: CrmReducer
+   CrmReducer: CrmReducer,
+   headcount: headcountReducer,
+   nht: nhtReducer,
+   terms: termsReducer,
+   history: historyReducer,
 });
 
 export default Reducers;
