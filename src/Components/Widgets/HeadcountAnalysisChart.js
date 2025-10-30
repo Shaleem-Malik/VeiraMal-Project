@@ -3,100 +3,145 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchHeadcountAnalysis } from "../../Store/Actions/headcountActions";
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
   Tooltip,
   Legend,
-} from "recharts";
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
 
-const HeadcountAnalysisChart = () => {
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+const HeadcountAnalysisChart = ({ data: snapshotData }) => {
   const dispatch = useDispatch();
   const { data = [], loading, error } = useSelector((state) => state.headcount);
 
   useEffect(() => {
-    dispatch(fetchHeadcountAnalysis());
-  }, [dispatch]);
+     if (!snapshotData) {
+       dispatch(fetchHeadcountAnalysis());
+     }
+   }, [dispatch, snapshotData]);
 
-  if (loading) return <p className="m-2">Loading Headcount Analysis...</p>;
-  if (error) return <p className="m-2 text-danger">Error: {error}</p>;
-  if (!data.length) return <p className="m-2">No headcount data available.</p>;
+  const finalData = snapshotData || data;
+  if (loading && !snapshotData) return <p className="m-2">Loading Headcount Analysis...</p>;
+  if (error && !snapshotData) return <p className="m-2 text-danger">Error: {error}</p>;
+  if (!finalData.length) return <p className="m-2">No headcount data available.</p>;
 
-  // Chart for gender distribution
-  const genderChartData = data.map((row) => ({
-    department: row.department ?? "-",
-    Male: row.maleCount || 0,
-    Female: row.femaleCount || 0,
-    Total: row.headcount || 0,
-  }));
+  // ✅ Gender distribution (per department)
+  const genderChartData = {
+    labels: finalData.map((row) => row.department ?? "-"),
+    datasets: [
+      {
+        label: "Male",
+        data: finalData.map((row) => row.maleCount || 0),
+        backgroundColor: "#4e79a7",
+        borderRadius: 6,
+        barPercentage: 0.6,
+      },
+      {
+        label: "Female",
+        data: finalData.map((row) => row.femaleCount || 0),
+        backgroundColor: "#f28e2b",
+        borderRadius: 6,
+        barPercentage: 0.6,
+      },
+    ],
+  };
 
-  // Chart for Permanent vs Temporary
-  const contractChartData = data.map((row) => ({
-    department: row.department ?? "-",
-    Permanent: row.headcountPercentage || 0,
-    Temporary: row.tempPercentage || 0,
-  }));
+  const genderOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: "top" },
+      tooltip: {
+        callbacks: {
+          label: (context) => `${context.dataset.label}: ${context.raw}`,
+        },
+      },
+      title: {
+        display: true,
+        text: "Gender Distribution by Department",
+        font: { size: 18 },
+      },
+    },
+    scales: {
+      x: {
+        ticks: { autoSkip: false, maxRotation: 60, minRotation: 45 },
+      },
+      y: {
+        beginAtZero: true,
+        title: { display: true, text: "Headcount" },
+      },
+    },
+  };
+
+  // ✅ Permanent vs Temporary (stacked horizontal bar)
+  const contractChartData = {
+    labels: finalData.map((row) => row.department ?? "-"),
+    datasets: [
+      {
+        label: "Permanent",
+        data: finalData.map((row) => row.headcountPercentage || 0),
+        backgroundColor: "#59a14f",
+        borderRadius: 6,
+        barPercentage: 0.6,
+      },
+      {
+        label: "Temporary",
+        data: finalData.map((row) => row.tempPercentage || 0),
+        backgroundColor: "#e15759",
+        borderRadius: 6,
+        barPercentage: 0.6,
+      },
+    ],
+  };
+
+  const contractOptions = {
+    indexAxis: "y", // horizontal
+    responsive: true,
+    plugins: {
+      legend: { position: "top" },
+      tooltip: {
+        callbacks: {
+          label: (context) => `${context.dataset.label}: ${context.raw}%`,
+        },
+      },
+      title: {
+        display: true,
+        text: "Permanent vs Temporary (%)",
+        font: { size: 18 },
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          callback: (value) => `${value}%`,
+        },
+        title: { display: true, text: "Percentage (%)" },
+      },
+      y: {
+        title: { display: true, text: "Department" },
+      },
+    },
+  };
 
   return (
     <div className="card p-3 shadow-sm">
       <h3 className="mb-4">Headcount Analysis</h3>
 
       {/* Gender Bar Chart */}
-      <h5 className="mt-3">Gender Distribution</h5>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart
-          data={genderChartData}
-          margin={{ top: 20, right: 30, left: 0, bottom: 50 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-          <XAxis
-            dataKey="department"
-            angle={-45}
-            textAnchor="end"
-            interval={0}
-            height={100}
-          />
-          <YAxis />
-          <Tooltip
-            contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc" }}
-            formatter={(value) => [value, "Count"]}
-          />
-          <Legend verticalAlign="top" height={36} />
-          <Bar dataKey="Male" fill="#4e79a7" barSize={20} radius={[4, 4, 0, 0]} />
-          <Bar dataKey="Female" fill="#f28e2b" barSize={20} radius={[4, 4, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="mb-5">
+        <Bar data={genderChartData} options={genderOptions} height={120} />
+      </div>
 
-      {/* Permanent vs Temporary Horizontal Chart */}
-      <h5 className="mt-5">Permanent vs Temporary (%)</h5>
-      <ResponsiveContainer width="100%" height={400}>
-        <BarChart
-          layout="vertical"
-          data={contractChartData}
-          margin={{ top: 20, right: 30, left: 50, bottom: 20 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-          <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-          <YAxis dataKey="department" type="category" width={120} />
-          <Tooltip formatter={(value) => `${value}%`} />
-          <Legend />
-          <Bar
-            dataKey="Permanent"
-            stackId="a"
-            fill="#59a14f"
-            radius={[0, 4, 4, 0]}
-          />
-          <Bar
-            dataKey="Temporary"
-            stackId="a"
-            fill="#e15759"
-            radius={[4, 0, 0, 4]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+      {/* Permanent vs Temporary */}
+      <div>
+        <Bar data={contractChartData} options={contractOptions} height={150} />
+      </div>
     </div>
   );
 };

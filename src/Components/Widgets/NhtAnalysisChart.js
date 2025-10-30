@@ -3,64 +3,114 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchNhtAnalysis } from "../../Store/Actions/nhtActions";
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
   Tooltip,
   Legend,
-} from "recharts";
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
 
-const NhtAnalysisChart = () => {
+// Register Chart.js modules
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+const NhtAnalysisChart = ({ data: snapshotData }) => {
   const dispatch = useDispatch();
   const { data = [], loading, error } = useSelector((state) => state.nht);
 
+  // Load live data only if no snapshot provided
   useEffect(() => {
-    dispatch(fetchNhtAnalysis());
-  }, [dispatch]);
+    if (!snapshotData) {
+      dispatch(fetchNhtAnalysis());
+    }
+  }, [dispatch, snapshotData]);
 
-  if (loading) return <p className="m-2">Loading Career Management data...</p>;
-  if (error) return <p className="m-2 text-danger">Error: {error}</p>;
-  if (!data.length) return <p className="m-2">No Career Management data available.</p>;
+  const finalData = snapshotData || data;
 
-  // Transform data for chart
-  const chartData = data.map((row) => ({
-    department: row.department ?? "-",
-    "New Hires (M)": row.newHireMale ?? 0,
-    "New Hires (F)": row.newHireFemale ?? 0,
-    "Promotions (M)": row.transferMale ?? 0,
-    "Promotions (F)": row.transferFemale ?? 0,
-  }));
+  if (!snapshotData && loading)
+    return <p className="m-2">Loading Career Management data...</p>;
+  if (!snapshotData && error)
+    return <p className="m-2 text-danger">Error: {error}</p>;
+  if (!finalData.length)
+    return <p className="m-2">No Career Management data available.</p>;
+
+  // Chart.js datasets
+  const chartData = {
+    labels: finalData.map((row) => row.department ?? "-"),
+    datasets: [
+      {
+        label: "New Hires (M)",
+        data: finalData.map((row) => row.newHireMale ?? 0),
+        backgroundColor: "#4e79a7",
+      },
+      {
+        label: "New Hires (F)",
+        data: finalData.map((row) => row.newHireFemale ?? 0),
+        backgroundColor: "#f28e2b",
+      },
+      {
+        label: "Promotions (M)",
+        data: finalData.map((row) => row.transferMale ?? 0),
+        backgroundColor: "#59a14f",
+      },
+      {
+        label: "Promotions (F)",
+        data: finalData.map((row) => row.transferFemale ?? 0),
+        backgroundColor: "#e15759",
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top",
+        labels: {
+          font: { size: 13 },
+          color: "#333",
+        },
+      },
+      title: {
+        display: true,
+        text: "Career Management Overview",
+        font: { size: 16, weight: "bold" },
+      },
+      tooltip: {
+        backgroundColor: "#fff",
+        borderColor: "#ccc",
+        borderWidth: 1,
+        titleColor: "#333",
+        bodyColor: "#333",
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+        },
+        grid: {
+          display: false,
+        },
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: "#eee",
+        },
+      },
+    },
+  };
 
   return (
     <div className="card p-3 shadow-sm">
-      <h3 className="mb-4">Career Management Overview</h3>
-      <ResponsiveContainer width="100%" height={400}>
-        <BarChart
-          data={chartData}
-          margin={{ top: 20, right: 30, left: 0, bottom: 50 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-          <XAxis
-            dataKey="department"
-            angle={-45}
-            textAnchor="end"
-            interval={0}
-            height={100}
-          />
-          <YAxis />
-          <Tooltip
-            contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc" }}
-          />
-          <Legend verticalAlign="top" height={36} />
-          <Bar dataKey="New Hires (M)" fill="#4e79a7" barSize={18} radius={[4, 4, 0, 0]} />
-          <Bar dataKey="New Hires (F)" fill="#f28e2b" barSize={18} radius={[4, 4, 0, 0]} />
-          <Bar dataKey="Promotions (M)" fill="#59a14f" barSize={18} radius={[4, 4, 0, 0]} />
-          <Bar dataKey="Promotions (F)" fill="#e15759" barSize={18} radius={[4, 4, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      <div style={{ height: "400px" }}>
+        <Bar data={chartData} options={options} />
+      </div>
     </div>
   );
 };

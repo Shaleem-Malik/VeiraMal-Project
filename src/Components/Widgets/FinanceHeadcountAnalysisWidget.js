@@ -1,35 +1,36 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchHeadcountAnalysis } from "../../Store/Actions/headcountActions";
+import { fetchFinanceAnalysis } from "../../Store/Actions/headcountActions";
 
-const HeadcountAnalysisWidget = ({ data: snapshotData }) => {
+const FinanceHeadcountAnalysisWidget = ({ month = "April", data: snapshotData }) => {
   const dispatch = useDispatch();
-  const { data = [], loading, error } = useSelector((state) => state.headcount);
+  const { financeData = [], financeLoading, financeError } = useSelector(
+    (state) => state.headcount
+  );
 
   useEffect(() => {
-    // Only fetch latest data if NO snapshot is provided
     if (!snapshotData) {
-      dispatch(fetchHeadcountAnalysis());
+      dispatch(fetchFinanceAnalysis("April")); // pass month dynamically
     }
-  }, [dispatch, snapshotData]);
+  }, [dispatch, snapshotData, month]);
 
-  // If snapshotData exists, use it. Otherwise fallback to redux data.
-  const finalData = snapshotData || data;
+  // If snapshotData exists, use it. Otherwise fallback to redux store
+  const finalData = snapshotData || financeData;
 
   if (!finalData.length) {
-    if (loading) return <p className="m-2">Loading Headcount Analysis...</p>;
-    if (error) return <p className="m-2 text-danger">Error: {error}</p>;
-    return <p className="m-2">No headcount data available.</p>;
+    if (financeLoading) return <p className="m-2">Loading Finance Headcount Analysis...</p>;
+    if (financeError) return <p className="m-2 text-danger">Error: {financeError}</p>;
+    return <p className="m-2">No finance headcount data available.</p>;
   }
-
+  const businessUnit = localStorage.getItem("BusinessUnit") || 'Finance'; 
   return (
     <div className="card p-3">
-      <h3 className="mb-3">Demographics</h3>
+      <h3 className="mb-3">{businessUnit} Demographics ({month})</h3>
       <div className="table-responsive">
         <table className="table table-bordered table-sm align-middle text-center">
           <thead className="table-light">
             <tr>
-              <th rowSpan="2">Department</th>
+              <th rowSpan="2">Organizational Unit</th>
               <th colSpan="3">Headcount</th>
               <th colSpan="2">Male</th>
               <th colSpan="2">Female</th>
@@ -50,7 +51,7 @@ const HeadcountAnalysisWidget = ({ data: snapshotData }) => {
           <tbody>
             {finalData.map((row, idx) => (
               <tr key={idx}>
-                <td>{row.department ?? "-"}</td>
+                <td>{row.organizationalUnit ?? "-"}</td>
                 <td>{row.headcount ?? 0}</td>
                 <td>{row.headcountPercentage ?? 0}%</td>
                 <td>{row.tempPercentage ?? 0}%</td>
@@ -70,4 +71,4 @@ const HeadcountAnalysisWidget = ({ data: snapshotData }) => {
   );
 };
 
-export default HeadcountAnalysisWidget;
+export default FinanceHeadcountAnalysisWidget;

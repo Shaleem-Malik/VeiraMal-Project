@@ -1,0 +1,112 @@
+.ecom-dashboard-wrapper {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding: 20px;
+  font-family: "Inter", sans-serif;
+}
+
+/* Top Action Bar */
+.dashboard-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.dashboard-topbar .btn-primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.dashboard-topbar .btn-primary:hover {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  transform: translateY(-2px);
+}
+
+/* Dropdown */
+.dashboard-topbar select.form-select {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* View Toggle Buttons */
+.view-toggle button {
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 500;
+}
+.view-toggle .btn-primary {
+  background: #2563eb;
+  border: none;
+}
+.view-toggle .btn-outline-primary {
+  border: 1px solid #2563eb;
+  color: #2563eb;
+}
+.view-toggle .btn-outline-primary:hover {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* Section Toggles */
+.section-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+.section-toggles .form-check-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Section Headers */
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 20px;
+  background: #3b82f6;
+  border-radius: 3px;
+  margin-right: 10px;
+}
+
+/* Cards for widgets */
+.dashboard-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+  padding: 20px;
+  margin-bottom: 30px;
+  transition: all 0.2s ease;
+}
+.dashboard-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+
+/* Modal overrides */
+.modal-content {
+  border-radius: 12px;
+}
+.modal-header {
+  background: #f3f4f6;
+  border-bottom: none;
+}
+.modal-footer button {
+  border-radius: 6px;
+  font-weight: 500;
+}

@@ -1,4 +1,6 @@
 import axios from "axios";
+import { NotificationManager } from 'react-notifications';
+const API_BASE_URL = process.env.REACT_APP_BASE_URL;
 
 // Action Types
 export const SAVE_HISTORY_REQUEST = "SAVE_HISTORY_REQUEST";
@@ -12,6 +14,15 @@ export const FETCH_HISTORY_LIST_FAILURE = "FETCH_HISTORY_LIST_FAILURE";
 export const FETCH_HISTORY_DETAIL_REQUEST = "FETCH_HISTORY_DETAIL_REQUEST";
 export const FETCH_HISTORY_DETAIL_SUCCESS = "FETCH_HISTORY_DETAIL_SUCCESS";
 export const FETCH_HISTORY_DETAIL_FAILURE = "FETCH_HISTORY_DETAIL_FAILURE";
+
+export const FETCH_CEO_YTD_REQUEST = "FETCH_CEO_YTD_REQUEST";
+export const FETCH_CEO_YTD_SUCCESS = "FETCH_CEO_YTD_SUCCESS";
+export const FETCH_CEO_YTD_FAILURE = "FETCH_CEO_YTD_FAILURE";
+
+
+export const fetchCeoYtdRequest = () => ({ type: FETCH_CEO_YTD_REQUEST });
+export const fetchCeoYtdSuccess = (data) => ({ type: FETCH_CEO_YTD_SUCCESS, payload: data });
+export const fetchCeoYtdFailure = (err) => ({ type: FETCH_CEO_YTD_FAILURE, payload: err });
 
 // Save Actions
 export const saveHistoryRequest = () => ({ type: SAVE_HISTORY_REQUEST });
@@ -46,38 +57,60 @@ export const fetchHistoryDetailFailure = (error) => ({
   payload: error,
 });
 
+export const fetchCeoYtdAnalysis = () => async (dispatch) => {
+  dispatch(fetchCeoYtdRequest());
+  try {
+    const res = await axios.get(`${API_BASE_URL}AnalysisHistory/ceo/ytd`);
+    dispatch(fetchCeoYtdSuccess(res.data));
+  } catch (error) {
+    dispatch(fetchCeoYtdFailure(error.message));
+  }
+};
+
 // Save All Analysis
-export const saveAllAnalysisHistory = () => async (dispatch, getState) => {
+export const saveAllAnalysisHistory = (isFinal, year, month) => async (dispatch, getState) => {
   dispatch(saveHistoryRequest());
   try {
     const state = getState();
-    const headcountData = state.headcount.data || [];
-    const nhtData = state.nht.data || [];
-    const termsData = state.terms.data || [];
+    const uploadedTypes = JSON.parse(localStorage.getItem("uploadedFiles")) || [];
 
     const payload = {
-      headcount: headcountData,
-      nht: nhtData,
-      terms: termsData,
+      isFinal,
+      year,
+      month
     };
 
+    if (uploadedTypes.includes("headcount")) {
+      payload.headcount = state.headcount.data || [];
+    }
+    if (uploadedTypes.includes("nht")) {
+      payload.nht = state.nht.data || [];
+    }
+    if (uploadedTypes.includes("terms")) {
+      payload.terms = state.terms.data || [];
+    }
+
     const response = await axios.post(
-      "http://localhost:5228/api/AnalysisHistory/save",
+      `${API_BASE_URL}AnalysisHistory/save`,
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
 
     dispatch(saveHistorySuccess(response.data));
+    NotificationManager.success('Snapshot Saved Successfully!');
   } catch (error) {
     dispatch(saveHistoryFailure(error.message));
+    NotificationManager.error(error.message || 'Got some error while saving snapshot')
   }
 };
+
+
 
 // Fetch All History List
 export const fetchHistoryList = () => async (dispatch) => {
   dispatch(fetchHistoryListRequest());
   try {
-    const response = await axios.get("http://localhost:5228/api/AnalysisHistory/all");
+    const response = await axios.get(`${API_BASE_URL}AnalysisHistory/all`);
     dispatch(fetchHistoryListSuccess(response.data));
   } catch (error) {
     dispatch(fetchHistoryListFailure(error.message));
@@ -88,7 +121,7 @@ export const fetchHistoryList = () => async (dispatch) => {
 export const fetchHistoryDetail = (id) => async (dispatch) => {
   dispatch(fetchHistoryDetailRequest());
   try {
-    const response = await axios.get(`http://localhost:5228/api/AnalysisHistory/${id}`);
+    const response = await axios.get(`${API_BASE_URL}AnalysisHistory/${id}`);
     dispatch(fetchHistoryDetailSuccess(response.data));
   } catch (error) {
     dispatch(fetchHistoryDetailFailure(error.message));

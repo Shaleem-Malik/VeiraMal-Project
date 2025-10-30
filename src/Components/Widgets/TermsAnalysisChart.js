@@ -1,56 +1,115 @@
+// src/components/widgets/TermsAnalysisChart.js
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchTermsAnalysis } from "../../Store/Actions/termsActions";
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
   Tooltip,
   Legend,
-  LabelList
-} from "recharts";
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
 
-const TermsAnalysisChart = () => {
+// Register Chart.js modules
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+const TermsAnalysisChart = ({ data: snapshotData }) => {
   const dispatch = useDispatch();
-  const { loading, data = [], error } = useSelector((state) => state.terms);
+  const { loading, data: liveData = [], error } = useSelector((state) => state.terms);
 
+  // Only fetch live terms analysis if snapshot wasn't provided
   useEffect(() => {
-    dispatch(fetchTermsAnalysis());
-  }, [dispatch]);
+    if (!snapshotData) {
+      dispatch(fetchTermsAnalysis());
+    }
+  }, [dispatch, snapshotData]);
 
-  if (loading) return <p>Loading turnover analysis...</p>;
-  if (error) return <p>Error: {error}</p>;
-  if (!data.length) return <p>No turnover data available.</p>;
+  const finalData = snapshotData || liveData;
 
-  const voluntaryData = data.map((row) => ({
-    department: row.department,
-    Male: row.voluntaryMaleRate || 0,
-    Female: row.voluntaryFemaleRate || 0
-  }));
+  if (!snapshotData && loading) return <p>Loading turnover analysis...</p>;
+  if (!snapshotData && error) return <p className="text-danger">Error: {error}</p>;
+  if (!finalData || !finalData.length) return <p>No turnover data available.</p>;
 
-  const involuntaryData = data.map((row) => ({
-    department: row.department,
-    Male: row.involuntaryMaleRate || 0,
-    Female: row.involuntaryFemaleRate || 0
-  }));
+  // Transform data for chart.js
+  const departments = finalData.map((row) => row.department ?? "-");
+
+  const voluntaryData = {
+    labels: departments,
+    datasets: [
+      {
+        label: "Male",
+        data: finalData.map((row) => row.voluntaryMaleRate || 0),
+        backgroundColor: "#4e79a7",
+      },
+      {
+        label: "Female",
+        data: finalData.map((row) => row.voluntaryFemaleRate || 0),
+        backgroundColor: "#f28e2b",
+      },
+    ],
+  };
+
+  const involuntaryData = {
+    labels: departments,
+    datasets: [
+      {
+        label: "Male",
+        data: finalData.map((row) => row.involuntaryMaleRate || 0),
+        backgroundColor: "#76b7b2",
+      },
+      {
+        label: "Female",
+        data: finalData.map((row) => row.involuntaryFemaleRate || 0),
+        backgroundColor: "#edc949",
+      },
+    ],
+  };
+
+  const baseOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top",
+        labels: { font: { size: 13 }, color: "#333" },
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+          color: "#666",
+          font: { size: 12 },
+        },
+        grid: { display: false },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: (value) => `${value}%`,
+          color: "#666",
+          font: { size: 12 },
+        },
+        grid: { color: "#eee" },
+      },
+    },
+  };
 
   const chartCardStyle = {
     background: "#fff",
     borderRadius: "12px",
     boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
     padding: "20px",
-    marginBottom: "30px"
-  };
-
-  const tooltipStyle = {
-    background: "#1f2937",
-    borderRadius: "8px",
-    border: "none",
-    color: "#fff",
-    fontSize: "13px"
+    marginBottom: "30px",
   };
 
   return (
@@ -58,75 +117,33 @@ const TermsAnalysisChart = () => {
       {/* Voluntary Turnover */}
       <div style={chartCardStyle}>
         <h4 style={{
-          fontWeight: "600",
-          color: "#333",
-          marginBottom: "15px",
-          borderBottom: "1px solid #eee",
-          paddingBottom: "8px"
-        }}>
+            fontWeight: "600",
+            color: "#333",
+            marginBottom: "15px",
+            borderBottom: "1px solid #eee",
+            paddingBottom: "8px",
+          }}>
           Voluntary Turnover by Gender (%)
         </h4>
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart
-            data={voluntaryData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-            <XAxis
-              dataKey="department"
-              angle={-45}
-              textAnchor="end"
-              height={80}
-              tick={{ fill: "#666", fontSize: 12 }}
-            />
-            <YAxis tickFormatter={(v) => `${v}%`} tick={{ fill: "#666", fontSize: 12 }} />
-            <Tooltip formatter={(value) => `${value}%`} contentStyle={tooltipStyle} />
-            <Legend />
-            <Bar dataKey="Male" fill="#4e79a7" radius={[6, 6, 0, 0]}>
-              <LabelList dataKey="Male" position="top" formatter={(v) => `${v}%`} fill="#333" fontSize={11} />
-            </Bar>
-            <Bar dataKey="Female" fill="#f28e2b" radius={[6, 6, 0, 0]}>
-              <LabelList dataKey="Female" position="top" formatter={(v) => `${v}%`} fill="#333" fontSize={11} />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <div style={{ height: "400px" }}>
+          <Bar data={voluntaryData} options={baseOptions} />
+        </div>
       </div>
 
       {/* Involuntary Turnover */}
       <div style={chartCardStyle}>
         <h4 style={{
-          fontWeight: "600",
-          color: "#333",
-          marginBottom: "15px",
-          borderBottom: "1px solid #eee",
-          paddingBottom: "8px"
-        }}>
+            fontWeight: "600",
+            color: "#333",
+            marginBottom: "15px",
+            borderBottom: "1px solid #eee",
+            paddingBottom: "8px",
+          }}>
           Involuntary Turnover by Gender (%)
         </h4>
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart
-            data={involuntaryData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-            <XAxis
-              dataKey="department"
-              angle={-45}
-              textAnchor="end"
-              height={80}
-              tick={{ fill: "#666", fontSize: 12 }}
-            />
-            <YAxis tickFormatter={(v) => `${v}%`} tick={{ fill: "#666", fontSize: 12 }} />
-            <Tooltip formatter={(value) => `${value}%`} contentStyle={tooltipStyle} />
-            <Legend />
-            <Bar dataKey="Male" fill="#76b7b2" radius={[6, 6, 0, 0]}>
-              <LabelList dataKey="Male" position="top" formatter={(v) => `${v}%`} fill="#333" fontSize={11} />
-            </Bar>
-            <Bar dataKey="Female" fill="#edc949" radius={[6, 6, 0, 0]}>
-              <LabelList dataKey="Female" position="top" formatter={(v) => `${v}%`} fill="#333" fontSize={11} />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <div style={{ height: "400px" }}>
+          <Bar data={involuntaryData} options={baseOptions} />
+        </div>
       </div>
     </>
   );

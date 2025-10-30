@@ -8,6 +8,9 @@ import {
   FETCH_HISTORY_DETAIL_REQUEST,
   FETCH_HISTORY_DETAIL_SUCCESS,
   FETCH_HISTORY_DETAIL_FAILURE,
+  FETCH_CEO_YTD_REQUEST,
+  FETCH_CEO_YTD_SUCCESS,
+  FETCH_CEO_YTD_FAILURE,
 } from "../Actions/historyActions";
 
 const initialState = {
@@ -18,6 +21,10 @@ const initialState = {
   historyList: [],
   loadingDetail: false,
   historyDetail: null,
+
+  ceoYtdLoading: false,
+  ceoYtdData: null,
+  ceoYtdError: null,
 };
 
 const historyReducer = (state = initialState, action) => {
@@ -45,6 +52,14 @@ const historyReducer = (state = initialState, action) => {
       return { ...state, loadingDetail: false, historyDetail: action.payload };
     case FETCH_HISTORY_DETAIL_FAILURE:
       return { ...state, loadingDetail: false, error: action.payload };
+
+    // CEO YTD
+    case FETCH_CEO_YTD_REQUEST:
+      return { ...state, ceoYtdLoading: true, ceoYtdError: null };
+    case FETCH_CEO_YTD_SUCCESS:
+      return { ...state, ceoYtdLoading: false, ceoYtdData: action.payload };
+    case FETCH_CEO_YTD_FAILURE:
+      return { ...state, ceoYtdLoading: false, ceoYtdError: action.payload };
 
     default:
       return state;

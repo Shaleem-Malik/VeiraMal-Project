@@ -15,6 +15,8 @@ import headcountReducer from "../Actions/headcountActions";
 import nhtReducer from "../Actions/nhtActions";
 import termsReducer from "../Actions/termsActions";
 import historyReducer from "./historyReducer";
+import companyReducer from "../Actions/companyActions";
+import userReducer from "../Actions/userActions"
 
 const Reducers = combineReducers({
    settings,
@@ -30,6 +32,8 @@ const Reducers = combineReducers({
    nht: nhtReducer,
    terms: termsReducer,
    history: historyReducer,
+   company : companyReducer,
+   user : userReducer
 });
 
 export default Reducers;

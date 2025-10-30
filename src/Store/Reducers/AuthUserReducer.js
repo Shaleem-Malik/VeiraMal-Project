@@ -8,7 +8,11 @@ import {
     LOGOUT_USER,
     SIGNUP_USER,
     SIGNUP_USER_SUCCESS,
-    SIGNUP_USER_FAILURE
+    SIGNUP_USER_FAILURE,
+    // reset types
+    RESET_PASSWORD,
+    RESET_PASSWORD_SUCCESS,
+    RESET_PASSWORD_FAILURE
 } from 'Store/Actions/types';
 
 /**
@@ -41,6 +45,17 @@ let authUser = (state = INIT_STATE, action) => {
             return { ...state, loading: false, user: action.payload };
 
         case SIGNUP_USER_FAILURE:
+            return { ...state, loading: false };
+
+        // Reset password flow
+        case RESET_PASSWORD:
+            return { ...state, loading: true };
+
+        case RESET_PASSWORD_SUCCESS:
+            // after successful reset, we removed token and redirected to signin.
+            return { ...state, loading: false };
+
+        case RESET_PASSWORD_FAILURE:
             return { ...state, loading: false };
 
         default: return { ...state };
