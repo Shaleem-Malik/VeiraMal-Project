@@ -39,6 +39,13 @@ jobs:
           output_location: "build" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
 
+          # IMPORTANT: disable CRA's "treat warnings as errors" in CI
+          # and install with legacy peer deps to bypass MUI v4 conflicts
+          app_build_command: |
+            node -v
+            npm ci --legacy-peer-deps
+            CI=false npm run build
+
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
@@ -50,6 +57,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_MANGO_BEACH_0C8EFBC00 }}
           action: "close"
+
 
 
 
