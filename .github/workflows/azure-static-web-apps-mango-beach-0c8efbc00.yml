@@ -3,11 +3,11 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches:
-      - Dev
+      - master
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - Dev
+      - master
 
 jobs:
   build_and_deploy_job:
@@ -19,26 +19,25 @@ jobs:
       NODE_VERSION: '18'
       # allow install despite peer-deps conflicts (MUI v4 + React 18)
       NPM_CONFIG_LEGACY_PEER_DEPS: 'true'
-
+      
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
-
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # keep your exact secret name from the repo
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_ROCK_05FAC6600 }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for GitHub integrations (PR comments, etc.)
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_MANGO_BEACH_0C8EFBC00 }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-
-          # paths: React app is at repo root; no API in this repo
-          app_location: "/"
-          api_location: ""
-          output_location: "build"
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: "/" # App source code path
+          api_location: "" # Api source code path - optional
+          output_location: "build" # Built app content directory - optional
+          ###### End of Repository/Build Configurations ######
 
           # IMPORTANT: disable CRA's "treat warnings as errors" in CI
           # and install with legacy peer deps to bypass MUI v4 conflicts
@@ -56,5 +55,9 @@ jobs:
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_ROCK_05FAC6600 }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_MANGO_BEACH_0C8EFBC00 }}
           action: "close"
+
+
+
+
