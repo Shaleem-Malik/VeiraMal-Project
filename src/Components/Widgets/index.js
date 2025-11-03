@@ -170,7 +170,7 @@ const VisitorAreaChartWidget = Loadable({
 })
 
 const SalesAreaChartWidget = Loadable({
-   loader: () => import("./SalesAreaChart"),
+   loader: () => import("./SalesAreaChartWidget"),
    loading: MyLoadingComponent
 })
 

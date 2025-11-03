@@ -38,10 +38,42 @@ const AsyncCrmComponent = Loadable({
 	loading: () => <RctPageLoader />,
 });
 
+const AsyncAnalysisDetailComponent = Loadable({
+	loader: () => import("Routes/crm/dashboard/AnalysisDetail"),
+	loading: () => <RctPageLoader />,
+});
+
+const AsyncLiveAnalysisDetailComponent = Loadable({
+	loader:() => import("Routes/dashboard/ecommerce/LiveAnalysisDetail"),
+	loading: () => <RctPageLoader />,
+});
+
+const AsyncLiveCompanyDetailsComponent = Loadable({
+	loader:() => import("Routes/dashboard/agency/CompanyDetails"),
+	loading: () => <RctPageLoader />,
+});
+
+const AsynQuickActions = Loadable({
+	loader:() => import("Routes/dashboard/agency/QuickActionsContainer"),
+	loading: () => <RctPageLoader />,
+});
+
+const AsynSubCompaniesManagement = Loadable({
+	loader:() => import("Routes/dashboard/agency/SubCompaniesManagement"),
+	loading: () => <RctPageLoader />,
+})
+
+
+
 export {
 	AsyncEcommerceDashboardComponent,
 	AsyncSaasDashboardComponent,
 	AsyncAgencyDashboardComponent,
 	AsyncNewsDashboardComponent,
-	AsyncCrmComponent
+	AsyncCrmComponent,
+	AsyncAnalysisDetailComponent,
+	AsyncLiveAnalysisDetailComponent,
+	AsyncLiveCompanyDetailsComponent,
+	AsynQuickActions,
+	AsynSubCompaniesManagement
 };

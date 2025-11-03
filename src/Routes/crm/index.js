@@ -7,7 +7,8 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 
 // async components
 import {
-   AsyncCrmComponent
+   AsyncCrmComponent,
+   AsyncAnalysisDetailComponent
 } from 'Components/AsyncComponent/AsyncComponent';
 
 const Crm = ({ match }) => (
@@ -15,6 +16,7 @@ const Crm = ({ match }) => (
       <Switch>
          <Redirect exact from={`${match.url}/`} to={`${match.url}/dashboard`} />
          <Route path={`${match.url}/dashboard`} component={AsyncCrmComponent} />
+         <Route path={`${match.url}/analysis-detail`} component={AsyncAnalysisDetailComponent} />
       </Switch>
    </div>
 );
