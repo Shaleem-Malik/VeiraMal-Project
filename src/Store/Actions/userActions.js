@@ -1,5 +1,5 @@
 import { NotificationManager } from "react-notifications";
-import { apiWithCompany, apiRequest } from 'Api/apiHelpers'; // Import the new helpers
+import { apiWithCompany } from 'Api/apiHelpers'; // Import the new helpers
 
 // ========================
 // ACTION TYPES
@@ -122,7 +122,7 @@ export const createUser = (dto) => async (dispatch) => {
     try {
         const resp = await apiWithCompany.post(`${BASE_API}users`, dto);
         dispatch(createUserSuccess(resp.data));
-        NotificationManager.success("User created successfully");
+        // NotificationManager.success("User created successfully");
         dispatch(fetchUsers());
         return resp.data;
     } catch (err) {
@@ -272,7 +272,7 @@ export const addBusinessUnit = (model) => async (dispatch) => {
     try {
         const resp = await apiWithCompany.post(`${BASE_API}metadata/businessunits`, model);
         dispatch(addBusinessUnitSuccess(resp.data));
-        NotificationManager.success("Business unit added");
+        // NotificationManager.success("Business unit added");
         dispatch(fetchBusinessUnits());
         return resp.data;
     } catch (err) {
@@ -310,7 +310,7 @@ export const addAccessLevel = (model) => async (dispatch) => {
     try {
         const resp = await apiWithCompany.post(`${BASE_API}metadata/accesslevels`, model);
         dispatch(addAccessLevelSuccess(resp.data));
-        NotificationManager.success("Access level added");
+        // NotificationManager.success("Access level added");
         dispatch(fetchAccessLevels());
         return resp.data;
     } catch (err) {

@@ -12,7 +12,11 @@ import {
     // reset types
     RESET_PASSWORD,
     RESET_PASSWORD_SUCCESS,
-    RESET_PASSWORD_FAILURE
+    RESET_PASSWORD_FAILURE,
+
+    FORGOT_PASSWORD,
+    FORGOT_PASSWORD_SUCCESS,
+    FORGOT_PASSWORD_FAILURE
 } from 'Store/Actions/types';
 
 /**
@@ -57,6 +61,15 @@ let authUser = (state = INIT_STATE, action) => {
 
         case RESET_PASSWORD_FAILURE:
             return { ...state, loading: false };
+        
+        case FORGOT_PASSWORD:
+            return { ...state, loading: true };
+        
+        case FORGOT_PASSWORD_SUCCESS:
+            return { ...state, loading: true };
+
+        case FORGOT_PASSWORD_FAILURE:
+            return { ...state, loading: true };
 
         default: return { ...state };
     }

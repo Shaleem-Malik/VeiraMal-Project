@@ -1,7 +1,7 @@
 // SignupFirebase.jsx
 import React, { useState, useEffect } from 'react';
 import {
-  AppBar, Toolbar, Button, LinearProgress, Fab, Grid, Card, CardContent,
+  AppBar, Toolbar, Button, LinearProgress, Grid, Card, CardContent,
   CardActions, Typography, Box, Paper, IconButton, Chip, TextField, Collapse,
   Fade, Grow
 } from '@material-ui/core';
@@ -13,13 +13,11 @@ import QueueAnim from 'rc-queue-anim';
 import api from 'Api';
 import { NotificationManager } from 'react-notifications';
 import { SessionSlider } from 'Components/Widgets';
+import { Helmet } from "react-helmet";
+
 import AppConfig from 'Constants/AppConfig';
 import {
-  signupUserInFirebase,
-  signinUserWithFacebook,
-  signinUserWithGoogle,
-  signinUserWithGithub,
-  signinUserWithTwitter
+  signupUserInFirebase
 } from 'Store/Actions';
 
 // localStorage keys
@@ -27,10 +25,40 @@ const LS_KEY_PLAN = 'veiramal_selected_plan';
 const LS_KEY_SEATS = 'veiramal_additional_seats';
 
 const useStyles = makeStyles((theme) => ({
-  root: { minHeight: '100vh', background: 'linear-gradient(180deg, #f6f9ff 0%, #ffffff 60%)', paddingBottom: theme.spacing(6) },
-  header: { background: 'transparent', boxShadow: 'none', paddingTop: theme.spacing(2), paddingBottom: theme.spacing(2) },
-  logo: { display: 'flex', alignItems: 'center' },
-  mainContainer: { marginTop: theme.spacing(6) },
+  // root: prevent any horizontal overflow at page level
+  root: { 
+    minHeight: '100vh', 
+    display: 'flex',
+    flexDirection: 'column',
+    background: 'linear-gradient(180deg, #f6f9ff 0%, #ffffff 60%)', 
+    paddingBottom: theme.spacing(6),
+    overflowX: 'hidden'       // <--- prevents horizontal scroll
+  },
+  header: { 
+    background: 'transparent', 
+    boxShadow: 'none', 
+    paddingTop: theme.spacing(2), 
+    paddingBottom: theme.spacing(2) 
+  },
+  logo: { 
+    display: 'flex', 
+    alignItems: 'center',
+    // ensure logo cannot overflow its container
+    '& img': { maxWidth: '100%', height: 'auto', display: 'block' }
+  },
+
+  // mainContainer becomes the scrollable area (vertical only)
+  mainContainer: { 
+    marginTop: theme.spacing(6),
+    flex: 1,
+    overflowY: 'auto',
+    overflowX: 'hidden',     // <--- ensure no horizontal scroll here either
+    maxHeight: 'calc(100vh - 140px)',
+    paddingBottom: theme.spacing(4),
+    width: '100%',           // keep it within viewport width
+    boxSizing: 'border-box'  // safer sizing behavior
+  },
+
   hero: { padding: theme.spacing(4), marginBottom: theme.spacing(3), borderRadius: 16, background: 'linear-gradient(135deg,#ffffff,#f8fbff)', boxShadow: '0 6px 30px rgba(20,40,80,0.08)' },
   plansGrid: { marginTop: theme.spacing(2) },
   planCard: { borderRadius: 12, height: '100%', transition: 'transform 300ms, box-shadow 300ms', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 12px 30px rgba(15,30,80,0.12)' } },
@@ -43,6 +71,8 @@ const useStyles = makeStyles((theme) => ({
   socialRow: { marginTop: theme.spacing(2) },
   backBtn: { marginBottom: theme.spacing(2) }
 }));
+
+
 
 export default function SignupFirebase(props) {
   const classes = useStyles();
@@ -188,11 +218,18 @@ export default function SignupFirebase(props) {
 
     setSubmitting(true);
     try {
-      await dispatch(signupUserInFirebase(payload, props.history));
-      // signupUserInFirebase will handle success notification & redirect to /signin
+      // Build success/cancel/signin URLs to pass to server (server includes sign-in URL in the onboarding email)
+      const successUrl = window.location.origin + '/checkout-success';
+      const cancelUrl = window.location.origin + '/checkout-cancel';
+      const signInUrl = window.location.origin + '/signin';
+
+      // dispatch action which will call backend and redirect to Stripe Checkout
+      await dispatch(signupUserInFirebase(payload, props.history, { successUrl, cancelUrl, signInUrl }));
+
+      // note: signupUserInFirebase handles redirectToCheckout (so this code generally won't continue if redirect occurs)
     } catch (err) {
-      // signup action shows helpful notification; still log
       console.error('Onboard error:', err);
+      // A helpful notification will have already been shown by the action in most failure cases
     } finally {
       setSubmitting(false);
     }
@@ -200,6 +237,9 @@ export default function SignupFirebase(props) {
 
   return (
     <QueueAnim type="bottom" duration={900}>
+      <Helmet>
+          <title>Signup</title>
+      </Helmet>
       <div className={classes.root} key="signup-root">
         {(loading || plansLoading) && <LinearProgress />}
 
@@ -231,7 +271,7 @@ export default function SignupFirebase(props) {
 
               <Grid item xs={12} md={4} style={{ textAlign: 'right' }}>
                 <Typography variant="subtitle2" className={classes.smallMuted}>Need help?</Typography>
-                <Typography variant="h6">Contact: <strong>sales@{AppConfig.brandName?.toLowerCase() || 'company'}.com</strong></Typography>
+                <Typography variant="h6">Contact: <strong>{AppConfig.barndemail?.toLowerCase() || 'company'}</strong></Typography>
               </Grid>
             </Grid>
           </Paper>
@@ -371,7 +411,7 @@ export default function SignupFirebase(props) {
                             </Box>
                           </Grid>
 
-                          <Grid item xs={12} className={classes.socialRow}>
+                          {/* <Grid item xs={12} className={classes.socialRow}>
                             <Typography variant="body2" className={classes.smallMuted}>or continue with</Typography>
                             <Box mt={1} display="flex" gap={8}>
                               <Fab size="small" onClick={() => dispatch(signinUserWithFacebook(props.history))} className="btn-facebook"><i className="zmdi zmdi-facebook" /></Fab>
@@ -379,7 +419,7 @@ export default function SignupFirebase(props) {
                               <Fab size="small" onClick={() => dispatch(signinUserWithTwitter(props.history))} className="btn-twitter"><i className="zmdi zmdi-twitter" /></Fab>
                               <Fab size="small" onClick={() => dispatch(signinUserWithGithub(props.history))} className="btn-instagram"><i className="zmdi zmdi-github-alt" /></Fab>
                             </Box>
-                          </Grid>
+                          </Grid> */}
 
                           <Grid item xs={12}><Typography variant="caption" className={classes.smallMuted}>By signing up you agree to {AppConfig.brandName} — <Link to="/terms-condition">Terms of Service</Link></Typography></Grid>
                         </Grid>

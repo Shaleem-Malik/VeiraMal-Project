@@ -175,7 +175,7 @@ export default function BusinessUnitSelector() {
     } else if (normalizedAccess === 'superuser' || normalizedAccess === 'super_user' || normalizedAccess === 'super-user') {
       history.push('/agency/dashboard/agency');
     } else if (normalizedAccess === 'team manager' || normalizedAccess === 'teammanager') {
-      history.push('/horizontal/dashboard/saas');
+      history.push('/app/dashboard/saas');
     } else {
       history.push('/app/dashboard/ecommerce');
     }

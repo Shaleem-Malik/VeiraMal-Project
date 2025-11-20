@@ -6,6 +6,8 @@ import { Form, FormGroup, Input } from 'reactstrap';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import QueueAnim from 'rc-queue-anim';
 import { NotificationManager } from 'react-notifications';
+import { Helmet } from "react-helmet";
+
 
 import AppConfig from 'Constants/AppConfig';
 import { resetPassword } from 'Store/Actions';
@@ -50,7 +52,10 @@ function ResetPassword(props) {
   };
 
   return (
-    <QueueAnim type="bottom" duration={800}>
+    <QueueAnim type="bottom" duration={2000}>
+      <Helmet>
+          <title>Reset Password</title>
+      </Helmet>
       <div className="rct-session-wrapper" key="reset">
         {loading && <LinearProgress />}
         <AppBar position="static" className="session-header">
@@ -70,11 +75,18 @@ function ResetPassword(props) {
           </Toolbar>
         </AppBar>
 
-        <div className="session-inner-wrapper">
+        <div
+          className="session-inner-wrapper"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            minHeight: 'calc(100vh - 330px)'
+          }}
+        >
           <div className="container">
-            <div className="row row-eq-height">
+            <div className="row row-eq-height justify-content-center align-items-center">
               <div className="col-sm-7 col-md-7 col-lg-8">
-                <div className="session-body text-center">
+                <div className="session-body text-center shadow">
                   <div className="session-head mb-30">
                     <h2 className="font-weight-bold">Reset your password</h2>
                     <p className="mb-0">Set a strong password for your account</p>
@@ -123,9 +135,9 @@ function ResetPassword(props) {
                 </div>
               </div>
 
-              <div className="col-sm-5 col-md-5 col-lg-4">
-                {/* optional right panel */}
-              </div>
+              {/* <div className="col-sm-5 col-md-5 col-lg-4">
+                optional right panel
+              </div> */}
             </div>
           </div>
         </div>

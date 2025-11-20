@@ -1,9 +1,9 @@
-/**
+/** 
  * App Config File
  */
 const AppConfig = {
    appLogo: `${process.env.PUBLIC_URL}/assets/images/img/site-logo.png`,          // App Logo
-   brandName: 'VeiraMal',                                    // Brand Name
+   brandName: 'HR Analytix',                                    // Brand Name
    navCollapsed: false,                                      // Sidebar collapse
    darkMode: false,                                          // Dark Mode
    boxLayout: false,                                         // Box Layout
@@ -12,7 +12,8 @@ const AppConfig = {
    enableSidebarBackgroundImage: true,                      // Enable Sidebar Background Image
    sidebarImage: `${process.env.PUBLIC_URL}/assets/images/img/sidebar-4.jpg`,     // Select sidebar image
    isDarkSidenav: true,                                   // Set true to dark sidebar
-   enableThemeOptions: true,                              // Enable Theme Options
+   enableThemeOptions: true,  
+   barndemail: `sales@hranalytix.com`,                            // Enable Theme Options
    locale: {
       languageId: 'english',
       locale: 'en',

@@ -15,7 +15,7 @@ function UserBlock() {
    const history = useHistory(); // v5 history
 
    useEffect(() => {
-      const storedFullName = localStorage.getItem('access') || 'User';
+      const storedFullName = localStorage.getItem('name') || 'User';
       const storedEmail = localStorage.getItem('user_email') || 'info@example.com';
       setFullName(storedFullName);
       setEmail(storedEmail);

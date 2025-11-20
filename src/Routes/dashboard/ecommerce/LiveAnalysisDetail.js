@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import PageTitleBar from 'Components/PageTitleBar/PageTitleBar';
 import { useDispatch, useSelector } from "react-redux";
+import { IconButton } from '@material-ui/core';
+import { ArrowBack } from '@material-ui/icons';
+import { useHistory } from 'react-router-dom';
 import IntlMessages from 'Util/IntlMessages';
 import "../../crm/dashboard/CEODashboard.css";
 
@@ -21,6 +24,7 @@ import {
 
 
 export default function AnalysisDetail({ match }) {
+    const history = useHistory();
     const dispatch = useDispatch();
     const { saving, historyList, loadingList, historyDetail } = useSelector((state) => state.history);
     const [viewMode, setViewMode] = useState('chart');
@@ -93,7 +97,10 @@ export default function AnalysisDetail({ match }) {
                 <title>Detailed Analysis</title>
                 <meta name="description" content="Detailed Analysis" />
             </Helmet>
-            <PageTitleBar title={<IntlMessages id="Detailed Analysis" />} match={match} />
+            <div className="d-flex">
+                <IconButton style={{ marginBottom: '30px' }} onClick={() => history.goBack()}><ArrowBack /></IconButton>
+                <PageTitleBar title={<IntlMessages id="Detailed Analysis" />} match={match} />
+            </div>
 
             {/* Top Bar */}
             <div className="dashboard-topbar">

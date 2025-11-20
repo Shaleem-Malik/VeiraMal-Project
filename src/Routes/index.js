@@ -6,6 +6,7 @@ import Signup from 'Container/SignupFirebase';
 import ResetPassword from 'Container/ResetPassword';
 import BusinessUnitSelector from 'Container/BusinessUnitSelector';
 import CompanySelector from 'Container/CompanySelector';
+import CheckoutSuccess from 'Container/CheckoutSuccess';
 
 let routes = [
   {
@@ -35,6 +36,10 @@ let routes = [
   {
     path: 'choose-company',
     component: CompanySelector
+  },
+  {
+    path: 'checkout-success',
+    component: CheckoutSuccess
   }
 ];
 

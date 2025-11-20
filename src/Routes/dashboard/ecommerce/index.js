@@ -74,8 +74,10 @@ export default function EcommerceDashboard({ match }) {
         <meta name="description" content="Reactify Ecommerce Dashboard" />
       </Helmet>
       <div className="dashboard-header">
-        <PageTitleBar title={<IntlMessages id="Admin Dashboard" />} match={match} />
-
+        <div className="d-flex">
+          <PageTitleBar title={<IntlMessages id="Admin Dashboard" />} match={match} />
+          <div></div>
+        </div>
         {/* Top Bar: Dropdown Only */}
         <div className="dashboard-controls">
           <div className="controls-left">

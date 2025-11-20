@@ -36,7 +36,7 @@ const PageTitleBar = ({ title, match, enableBreadCrumb }) => {
       <div className="page-title d-flex justify-content-between align-items-center">
          {title &&
             <div className="page-title-wrap">
-               <i className="ti-angle-left"></i>
+               {/* <i className="ti-angle-left"></i> */}
                <h2 className="">{title}</h2>
             </div>
          }
@@ -56,7 +56,7 @@ const PageTitleBar = ({ title, match, enableBreadCrumb }) => {
 
 // default props value
 PageTitleBar.defaultProps = {
-   enableBreadCrumb: true
+   enableBreadCrumb: false
 }
 
 export default PageTitleBar;

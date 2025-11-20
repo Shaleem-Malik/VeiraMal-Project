@@ -18,7 +18,7 @@ export default function saasDashbaord(props) {
    return (
       <div className="saas-dashboard">
          <Helmet>
-            <title>Sass Dashboard</title>
+            <title>Team Manager Dashboard</title>
             <meta name="description" content="Reactify Sass Dashboard" />
          </Helmet>
          <PageTitleBar title={<IntlMessages id={`${businessUnit} Dashboard`} />} match={match} />

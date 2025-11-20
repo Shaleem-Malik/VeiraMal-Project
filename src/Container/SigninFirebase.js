@@ -4,12 +4,14 @@
 
 import React, { useState } from 'react';
 import { useDispatch, useSelector  } from 'react-redux';
-import { Button, AppBar, Toolbar} from '@material-ui/core';
+import { Button, AppBar, Toolbar } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { Form, FormGroup, Input } from 'reactstrap';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import QueueAnim from 'rc-queue-anim';
-import { Fab } from "@material-ui/core";
+import { Helmet } from "react-helmet";
+
+// import { Fab } from "@material-ui/core";
 
 // components
 // import { SessionSlider } from 'Components/Widgets';
@@ -19,22 +21,18 @@ import AppConfig from 'Constants/AppConfig';
 
 // redux action
 import {
-   signinUserInFirebase,
-   signinUserWithFacebook,
-   signinUserWithGoogle,
-   signinUserWithGithub,
-   signinUserWithTwitter
+   signinUserInFirebase
 } from 'Store/Actions';
 
 //Auth File
-import Auth from 'Auth/Auth';
+// import Auth from 'Auth/Auth';
 
-const auth = new Auth();
+// const auth = new Auth();
 
 function Signin(props) {
 
-   const [email, setEmail] = useState('demo@veiramal.com');
-   const [password, setPassword] = useState('test#123');
+   const [email, setEmail] = useState('mujahidnawaz686@gmail.com');
+   const [password, setPassword] = useState('mujahidnawaz');
    const dispatch = useDispatch();
    const loading = useSelector(state => state.loading);
 
@@ -55,14 +53,24 @@ function Signin(props) {
    }
 
    //Auth0 Login
-   const loginAuth0 = () => {
-      auth.login();
-   }
+   // const loginAuth0 = () => {
+   //    auth.login();
+   // }
 
+   const onForgotPassword = (e) => {
+     e && e.preventDefault();
+     if (props.history && typeof props.history.push === 'function') {
+       props.history.push('/forgot-password');
+     }
+   };
 
    return (
       <QueueAnim type="bottom" duration={2000}>
-         <div className="rct-session-wrapper">
+         <Helmet>
+            <title>Signin</title>
+         </Helmet>
+         <div className="rct-session-wrapper" key="reset">
+
             {loading &&
                <LinearProgress />
             }
@@ -72,24 +80,32 @@ function Signin(props) {
                      <div className="d-flex justify-content-between">
                         <div className="session-logo">
                            <Link to="/">
-                              <img src={AppConfig.appLogo} alt="session-logo" className="img-fluid" width="110" height="35" />
+                              {/* <img src={AppConfig.appLogo} alt="session-logo" className="img-fluid" width="110" height="35" /> */}
+                              <h1 className='font-weight-bold text-dark'>HR Analytix</h1>
                            </Link>
                         </div>
                         <div>
-                           <a href="!#" className="mr-15 text-white" onClick={onUserSignUp}>Create New account?</a>
+                           <a href="!#" className="mr-15 text-dark" onClick={onUserSignUp}>Create New account?</a>
                            <Button variant="contained" className="btn-light" onClick={onUserSignUp}>Sign Up</Button>
                         </div>
                      </div>
                   </div>
                </Toolbar>
             </AppBar>
-            <div className="session-inner-wrapper">
+            <div
+               className="session-inner-wrapper"
+               style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  minHeight: 'calc(100vh - 330px)'
+               }}
+            >
                <div className="container">
-                  <div className="row row-eq-height">
+                  <div className="row row-eq-height justify-content-center">
                      <div className="col-sm-7 col-md-7 col-lg-8">
-                        <div className="session-body text-center">
+                        <div className="session-body text-center shadow">
                            <div className="session-head mb-30">
-                              <h2 className="font-weight-bold">VeiraMal HR Portal</h2>
+                              <h2 className="font-weight-bold">HR Analytix Portal</h2>
                               <p className="mb-0">Most powerful HR Analysis Software</p>
                            </div>
                            <Form>
@@ -117,6 +133,15 @@ function Signin(props) {
                                  />
                                  <span className="has-icon"><i className="ti-lock"></i></span>
                               </FormGroup>
+
+                              {/* ADD: Forgot password link */}
+                              <div style={{ textAlign: 'right', marginBottom: 12 }}>
+                                {/* Using Link for client-side routing; also keep handler for consistency */}
+                                <Link to="/forgot-password" onClick={onForgotPassword} className="text-dark" style={{ textDecoration: 'none' }}>
+                                  Forgot password?
+                                </Link>
+                              </div>
+
                               <FormGroup className="mb-15">
                                  <Button
                                     color="primary"
@@ -128,7 +153,7 @@ function Signin(props) {
                                     Sign In
                                  </Button>
                               </FormGroup>
-                              <FormGroup className="mb-15">
+                              {/* <FormGroup className="mb-15">
                                  <Button
                                     variant="contained"
                                     className="btn-info btn-block text-white w-100"
@@ -137,9 +162,9 @@ function Signin(props) {
                                  >
                                     Sign In With Auth0
                                  </Button>
-                              </FormGroup>
+                              </FormGroup> */}
                            </Form>
-                           <p className="mb-20">or sign in with</p>
+                           {/* <p className="mb-20">or sign in with</p>
                            <Fab size="small" variant="round" className="btn-facebook mr-15 mb-20 text-white"
                               onClick={() => dispatch(signinUserWithFacebook(props.history))}
                            >
@@ -159,14 +184,14 @@ function Signin(props) {
                               onClick={() => dispatch(signinUserWithGithub(props.history))}
                            >
                               <i className="zmdi zmdi-github-alt"></i>
-                           </Fab>
+                           </Fab> */}
                            <p className="text-muted">By signing up you agree to {AppConfig.brandName}</p>
-                           <p className="mb-0"><a target="_blank" href="#/terms-condition" className="text-muted">Terms of Service</a></p>
+                           <p className="mb-0"><a target="_blank" href="#/terms-condition" className="text-muted" rel="noreferrer">Terms of Service</a></p>
                         </div>
                      </div>
-                     <div className="col-sm-5 col-md-5 col-lg-4">
-                        {/* <SessionSlider /> */}
-                     </div>
+                     {/* <div className="col-sm-5 col-md-5 col-lg-4">
+                        <SessionSlider />
+                     </div> */}
                   </div>
                </div>
             </div>

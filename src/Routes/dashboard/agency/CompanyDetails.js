@@ -43,7 +43,7 @@ export default function CompanyDetails() {
 
   // Get company state from Redux store
   const companyState = useSelector(state => state.company);
-  const { company, loading, updating, error } = companyState;
+  const { company, loading, updating } = companyState;
 
   // form fields (local)
   const [companyName, setCompanyName] = useState('');

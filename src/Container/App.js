@@ -22,6 +22,9 @@ import Signup from './SignupFirebase';
 import ResetPassword from './ResetPassword';
 import BusinessUnitSelector from './BusinessUnitSelector';
 import CompanySelector from './CompanySelector';
+import CheckoutSuccess from './CheckoutSuccess';
+import CheckoutCancel from './CheckoutCancel';
+import ForgotPassword from './ForgotPassword';
 
 function App(props) {
    const { location } = props;
@@ -52,6 +55,9 @@ function App(props) {
             <Route path={`${basePath}/agency`} component={AgencyLayout} />
             <Route path={`${basePath}/boxed`} component={RctBoxedLayout} />
             <Route path={`${basePath}/dashboard`} component={CRMLayout} />
+            <Route path={`${basePath}/checkout-success`} component={CheckoutSuccess} />
+            <Route path={`${basePath}/checkout-cancel`} component={CheckoutCancel} />
+            <Route path={`${basePath}/forgot-password`} component={ForgotPassword} />
          </Switch>
       </RctThemeProvider>
    );

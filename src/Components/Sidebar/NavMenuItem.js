@@ -57,7 +57,7 @@ function NavMenuItem(props){
 
                                     </span>
                                     {subMenu.new_item && subMenu.new_item === true ?
-                                       <Chip label="new" className="new-item" color="secondary" />
+                                       <Chip label="inProcess" className="new-item" color="secondary" />
                                        :
                                        ''
                                     }

@@ -336,7 +336,7 @@ export default function AgencyDashboard({ match }) {
   return (
     <div className="agency-dashboard-wrapper">
       <Helmet>
-        <title>Employee Management Dashboard</title>
+        <title>Company Profile</title>
         <meta name="description" content="Employee Management Dashboard - View and Manage Employees" />
       </Helmet>
 
