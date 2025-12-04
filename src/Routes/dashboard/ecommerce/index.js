@@ -101,7 +101,7 @@ export default function EcommerceDashboard({ match }) {
                   value={selectedHistoryId}
                   onChange={(e) => handleSelectHistory(e.target.value)}
                 >
-                  <option value="">Select Final Analysis</option>
+                  <option disabled value="">Select Final Analysis</option>
                   {finalHistoryList.map((item) => (
                     <option key={item.id} value={item.id}>
                       {`${item.monthName} ${item.year}`}

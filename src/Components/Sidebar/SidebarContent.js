@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { uploadNhtFile } from "Store/Actions/nhtActions";
 import { uploadHeadcountFile } from "Store/Actions/headcountActions";
@@ -20,8 +20,6 @@ import { CloudUpload } from "@material-ui/icons";
 import { withRouter } from "react-router-dom";
 import IntlMessages from "Util/IntlMessages";
 import NavMenuItem from "./NavMenuItem";
-// redux actions
-import { onToggleMenu } from "Store/Actions";
 
 function SidebarContent() {
   const dispatch = useDispatch();
@@ -35,6 +33,7 @@ function SidebarContent() {
     terms: null,
   });
   const [error, setError] = useState("");
+  const [uploadStarted, setUploadStarted] = useState(false);
 
   // Get upload progress & uploading state from Redux
   const headcountProgress = useSelector((state) => state.headcount.uploadProgress);
@@ -44,6 +43,38 @@ function SidebarContent() {
   const headcountUploading = useSelector((state) => state.headcount.uploading);
   const nhtUploading = useSelector((state) => state.nht.uploading);
   const termsUploading = useSelector((state) => state.terms.uploading);
+
+  // Check if all uploads are complete
+  const allUploadsComplete = () => {
+    // Only check files that were actually selected for upload
+    const headcountDone = !files.headcount || (!headcountUploading && headcountProgress === 100);
+    const nhtDone = !files.nht || (!nhtUploading && nhtProgress === 100);
+    const termsDone = !files.terms || (!termsUploading && termsProgress === 100);
+    return headcountDone && nhtDone && termsDone;
+  };
+
+  // Effect to handle upload completion
+  useEffect(() => {
+    if (open && uploadStarted && allUploadsComplete() && (files.headcount || files.nht || files.terms)) {
+      // Wait a bit then show save prompt
+      const timer = setTimeout(() => {
+        setOpen(false);
+        setUploadStarted(false);
+        // Trigger the save analysis prompt in the main app
+        window.dispatchEvent(new CustomEvent('showSaveAnalysisPrompt'));
+        setFiles({ headcount: null, nht: null, terms: null });
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [open, uploadStarted, headcountUploading, nhtUploading, termsUploading, 
+      headcountProgress, nhtProgress, termsProgress, files]);
+
+  // Reset upload state when modal opens
+  useEffect(() => {
+    if (open) {
+      setUploadStarted(false);
+    }
+  }, [open]);
 
   // -------------------------
   // Role helpers & filtering
@@ -75,7 +106,6 @@ function SidebarContent() {
   const rawCategory1 = (sidebarMenus && sidebarMenus.category1) ? sidebarMenus.category1 : [];
 
   // Filter child routes by user roles, drop menus that become empty
-  // NOTE: we intentionally create filtered copies for rendering only — the reducer still works with the original objects stored in Redux.
   const filteredCategory1 = rawCategory1
     .map((menu) => {
       if (!menu.child_routes || !Array.isArray(menu.child_routes)) return menu;
@@ -91,44 +121,6 @@ function SidebarContent() {
       return true;
     });
 
-  // -------------------------
-  // toggleMenu: dispatch original reference from Redux state
-  // -------------------------
-  const toggleMenu = (displayMenu, stateCategory) => {
-    // Find the original menu object reference in Redux state's sidebarMenus for the given category.
-    // We use menu_title as a stable key — change to a different unique key if you have one.
-    let originalMenu = null;
-    const bucket = (sidebarMenus && sidebarMenus[stateCategory]) || [];
-    for (let i = 0; i < bucket.length; i++) {
-      const m = bucket[i];
-      if (!m) continue;
-      // match by menu_title (fallback to path if available)
-      if (m.menu_title && displayMenu.menu_title && m.menu_title === displayMenu.menu_title) {
-        originalMenu = m;
-        break;
-      }
-      // if top-level link without menu_title, try match by path
-      if (m.path && displayMenu.path && m.path === displayMenu.path) {
-        originalMenu = m;
-        break;
-      }
-    }
-
-    // If we didn't find it by key (edge cases), fallback to finding by index position
-    if (!originalMenu && typeof displayMenu === "object") {
-      const idx = bucket.findIndex((m) => {
-        // best-effort: compare serialized titles/paths
-        return (m?.menu_title === displayMenu?.menu_title) || (m?.path === displayMenu?.path);
-      });
-      if (idx >= 0) originalMenu = bucket[idx];
-    }
-
-    // If still not found, fallback to using the displayMenu (this is last-resort and may break reducer expectations)
-    const menuToDispatch = originalMenu || displayMenu;
-
-    dispatch(onToggleMenu({ menu: menuToDispatch, stateCategory }));
-  };
-
   const handleFileChange = (e, type) => {
     setFiles({
       ...files,
@@ -142,6 +134,9 @@ function SidebarContent() {
       setError("Please upload at least one file before proceeding.");
       return;
     }
+
+    setUploadStarted(true);
+    setError("");
 
     if (files.headcount) dispatch(uploadHeadcountFile(files.headcount));
     if (files.nht) dispatch(uploadNhtFile(files.nht));
@@ -187,19 +182,11 @@ function SidebarContent() {
 
   const overallProgress = calculateOverallProgress();
 
-  // Check if all uploads are complete
-  const allUploadsComplete = () => {
-    return (
-      (!files.headcount || !headcountUploading) &&
-      (!files.nht || !nhtUploading) &&
-      (!files.terms || !termsUploading)
-    );
-  };
-
   const handleClose = () => {
     if (!isUploading) {
       setOpen(false);
       setFiles({ headcount: null, nht: null, terms: null });
+      setUploadStarted(false);
     }
   };
 
@@ -218,10 +205,11 @@ function SidebarContent() {
             }
           >
             {filteredCategory1.map((menu, key) => (
+              // Removed onToggleMenu prop since menu is non-collapsible
               <NavMenuItem
-                menu={menu} // render the filtered copy
+                menu={menu}
                 key={key}
-                onToggleMenu={() => toggleMenu(menu, "category1")} // dispatch original reference
+                onToggleMenu={() => {}} // Empty function as placeholder
               />
             ))}
           </List>
@@ -243,9 +231,9 @@ function SidebarContent() {
             overflow: "hidden",
           }}
           onClick={() => setOpen(true)}
-          disabled={isUploading}
+          disabled={isUploading && uploadStarted}
         >
-          {isUploading ? (
+          {isUploading && uploadStarted ? (
             <Box width="100%" textAlign="center">
               <Box
                 position="absolute"
@@ -271,7 +259,7 @@ function SidebarContent() {
         </Button>
       )}
 
-      {/* Upload Modal (unchanged) */}
+      {/* Upload Modal */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -351,6 +339,13 @@ function SidebarContent() {
                       <LinearProgress variant="determinate" value={termsProgress} />
                     </Box>
                   )}
+                  {!isUploading && uploadStarted && (
+                    <Typography variant="caption" color="primary" style={{ fontWeight: 600 }}>
+                      {type === "headcount" && headcountProgress === 100 && "✓ Upload complete"}
+                      {type === "nht" && nhtProgress === 100 && "✓ Upload complete"}
+                      {type === "terms" && termsProgress === 100 && "✓ Upload complete"}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -364,10 +359,16 @@ function SidebarContent() {
         </DialogContent>
         <DialogActions style={{ padding: "16px 24px" }}>
           <Button onClick={handleClose} color="secondary" variant="outlined" style={{ borderRadius: "8px" }} disabled={isUploading}>
-            {allUploadsComplete() ? "Close" : "Cancel"}
+            {allUploadsComplete() && uploadStarted ? "Close" : "Cancel"}
           </Button>
-          <Button onClick={handleUpload} color="primary" variant="contained" disabled={(!files.headcount && !files.nht && !files.terms) || isUploading} style={{ borderRadius: "8px", fontWeight: "600", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
-            {isUploading ? "Uploading..." : "Upload"}
+          <Button 
+            onClick={handleUpload} 
+            color="primary" 
+            variant="contained" 
+            disabled={(!files.headcount && !files.nht && !files.terms) || (isUploading && uploadStarted)} 
+            style={{ borderRadius: "8px", fontWeight: "600", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}
+          >
+            {isUploading && uploadStarted ? "Uploading..." : "Upload"}
           </Button>
         </DialogActions>
       </Dialog>

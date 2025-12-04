@@ -5,7 +5,7 @@ import React, { Component, Fragment } from 'react';
 import classNames from 'classnames';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 import { Scrollbars } from 'react-custom-scrollbars';
 
 // redux actions
@@ -62,13 +62,13 @@ class Sidebar extends Component {
 				>
 					<div className={classNames("rct-sidebar-content", { "sidebar-overlay-dark": isDarkSidenav, 'sidebar-overlay-light': !isDarkSidenav })}>
 						<div className="site-logo">
-							<Link to="/" className="logo-mini">
+							{/* <Link to="/" className="logo-mini"> */}
                         <img src={`${process.env.PUBLIC_URL}/assets/images/img/appLogo.png`} className="mr-15" alt="site logo" width="35" height="35" /> 
 						<h3 className="d-inline-block align-middle mb-0">HR Analytix</h3>
-							</Link>
-							<Link to="/" className="logo-normal">
+							{/* </Link> */}
+							{/* <Link to="/" className="logo-normal"> */}
                         {/* <img src={`${process.env.PUBLIC_URL}/assets/images/img/appLogoText.png`} className="img-fluid" alt="site-logo" width="67" height="17" /> */}
-							</Link>
+							{/* </Link> */}
 						</div>
 						<div className="rct-sidebar-wrap">
 							<Scrollbars

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchNhtAnalysis } from "../../Store/Actions/nhtActions";
+import { fetchNhtAnalysis, exportNhtAnalysis } from "../../Store/Actions/nhtActions";
 
 const NhtAnalysisWidget = ({ data: snapshotData }) => {
   const dispatch = useDispatch();
@@ -13,6 +13,10 @@ const NhtAnalysisWidget = ({ data: snapshotData }) => {
   }, [dispatch, snapshotData]);
 
   const finalData = snapshotData || data;
+
+  const handleExport = () => {
+    dispatch(exportNhtAnalysis());
+  };
 
   if (!snapshotData && loading) {
     return <p className="m-2">Loading Career Management data...</p>;
@@ -28,7 +32,20 @@ const NhtAnalysisWidget = ({ data: snapshotData }) => {
 
   return (
     <div className="card p-3">
-      <h3 className="mb-3">Career Management</h3>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3 className="mb-0">Career Management</h3>
+
+        <div>
+          <button
+            className="btn btn-sm btn-outline-primary"
+            onClick={handleExport}
+            title="Download department-level analysis as Excel"
+          >
+            Download Excel
+          </button>
+        </div>
+      </div>
+
       <div className="table-responsive">
         <table className="table table-bordered table-sm align-middle text-center">
           <thead className="table-light">
@@ -58,7 +75,11 @@ const NhtAnalysisWidget = ({ data: snapshotData }) => {
                 <td>{row.transferTotal ?? 0}</td>
                 <td>{row.transferMale ?? 0}</td>
                 <td>{row.transferFemale ?? 0}</td>
-                <td>{row.internalHireRate != null ? `${row.internalHireRate}%` : "0%"}</td>
+                <td>
+                  {row.internalHireRate != null
+                    ? `${row.internalHireRate}%`
+                    : "0%"}
+                </td>
               </tr>
             ))}
           </tbody>

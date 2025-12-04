@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { makeStyles } from '@material-ui/core/styles';
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    minHeight: '85vh',
+    padding: theme.spacing(4, 0),
+  },
+}));
 
 export default function SubCompaniesManagement() {
     const [subCompanies, setSubCompanies] = useState([]);
@@ -10,6 +18,7 @@ export default function SubCompaniesManagement() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [selectedSubCompany, setSelectedSubCompany] = useState(null);
+    const classes = useStyles();
 
     // Form states
     const [createForm, setCreateForm] = useState({
@@ -30,6 +39,8 @@ export default function SubCompaniesManagement() {
         return localStorage.getItem('companyId') || '';
     };
 
+    const API_BASE_URL = `${process.env.REACT_APP_BASE_URL}Company`;
+
     // Fetch subcompanies
     const fetchSubCompanies = async () => {
         const parentCompanyId = getParentCompanyId();
@@ -40,7 +51,7 @@ export default function SubCompaniesManagement() {
 
         setLoading(true);
         try {
-            const response = await axios.get(`http://localhost:5228/api/company/${parentCompanyId}/subcompanies`);
+            const response = await axios.get(`${API_BASE_URL}/${parentCompanyId}/subcompanies`);
             setSubCompanies(response.data);
             setError('');
         } catch (err) {
@@ -56,7 +67,7 @@ export default function SubCompaniesManagement() {
         if (!parentCompanyId) return;
 
         try {
-            const response = await axios.get(`http://localhost:5228/api/company/${parentCompanyId}/superusers`);
+            const response = await axios.get(`${API_BASE_URL}/${parentCompanyId}/superusers`);
             setSuperUsers(response.data);
         } catch (err) {
             console.error('Failed to fetch superusers:', err);
@@ -83,7 +94,7 @@ export default function SubCompaniesManagement() {
                 assignedSuperUserIds: createForm.assignedSuperUserIds
             };
 
-            await axios.post(`http://localhost:5228/api/company/${parentCompanyId}/subcompanies`, payload);
+            await axios.post(`${API_BASE_URL}/${parentCompanyId}/subcompanies`, payload);
             
             setSuccess('Subcompany created successfully!');
             setShowCreateModal(false);
@@ -109,7 +120,7 @@ export default function SubCompaniesManagement() {
             };
 
             await axios.post(
-                `http://localhost:5228/api/company/${parentCompanyId}/subcompanies/${selectedSubCompany.companyId}/assign-superusers`,
+                `${API_BASE_URL}/${parentCompanyId}/subcompanies/${selectedSubCompany.companyId}/assign-superusers`,
                 payload
             );
 
@@ -196,7 +207,7 @@ export default function SubCompaniesManagement() {
     }, [error, success]);
 
     return (
-        <div className="container-fluid">
+        <div className={`${classes.root}  container-fluid`}>
             {/* Header Section */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -208,7 +219,7 @@ export default function SubCompaniesManagement() {
                     onClick={() => setShowCreateModal(true)}
                     disabled={loading}
                 >
-                    <i className="fas fa-plus-circle mr-2"></i>
+                    {/* <i className="fas fa-plus-circle mr-2"></i> */}
                     Create New Sub Company
                 </button>
             </div>

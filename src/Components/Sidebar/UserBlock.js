@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dropdown, DropdownToggle, DropdownMenu } from 'reactstrap';
 import { Link, useHistory } from 'react-router-dom'; // <-- useHistory for react-router-dom v5
 import { useDispatch } from 'react-redux';
-import { Badge } from 'reactstrap';
+// import { Badge } from 'reactstrap';
 import { logoutUserFromFirebase } from 'Store/Actions';
 import IntlMessages from 'Util/IntlMessages';
 
@@ -69,12 +69,12 @@ function UserBlock() {
                         <span className="text-white fs-14"><small>{email}</small></span>
                      </li>
                      <li>
-                        <Link to={{ pathname: '/app/users/user-profile-1', state: { activeTab: 0 } }}>
+                        <Link to={{ pathname: '/app/dashboard/user-profile', state: { activeTab: 0 } }}>
                            <i className="zmdi zmdi-account text-primary mr-3"></i>
                            <span><IntlMessages id="widgets.profile" /></span>
                         </Link>
                      </li>
-                     <li>
+                     {/* <li>
                         <Link to={{ pathname: '/app/chat', state: { activeTab: 2 } }}>
                            <i className="zmdi zmdi-comment-text-alt text-success mr-3"></i>
                            <span><IntlMessages id="widgets.messages" /></span>
@@ -87,7 +87,7 @@ function UserBlock() {
                            <span><IntlMessages id="sidebar.feedback" /></span>
                            <Badge color="info" className="pull-right">1</Badge>
                         </Link>
-                     </li>
+                     </li> */}
                      <li className="border-top">
                         <a href="!#" onClick={logoutUser}>
                            <i className="zmdi zmdi-power text-danger mr-3"></i>

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchHeadcountAnalysis } from "../../Store/Actions/headcountActions";
+import { fetchHeadcountAnalysis, exportHeadcountAnalysis } from "../../Store/Actions/headcountActions";
 
 const HeadcountAnalysisWidget = ({ data: snapshotData }) => {
   const dispatch = useDispatch();
@@ -16,6 +16,10 @@ const HeadcountAnalysisWidget = ({ data: snapshotData }) => {
   // If snapshotData exists, use it. Otherwise fallback to redux data.
   const finalData = snapshotData || data;
 
+  const handleExport = () => {
+    dispatch(exportHeadcountAnalysis());
+  };
+
   if (!finalData.length) {
     if (loading) return <p className="m-2">Loading Headcount Analysis...</p>;
     if (error) return <p className="m-2 text-danger">Error: {error}</p>;
@@ -24,7 +28,20 @@ const HeadcountAnalysisWidget = ({ data: snapshotData }) => {
 
   return (
     <div className="card p-3">
-      <h3 className="mb-3">Demographics</h3>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3 className="mb-0">Demographics</h3>
+
+        <div>
+          <button
+            className="btn btn-sm btn-outline-primary"
+            onClick={handleExport}
+            title="Download headcount analysis as Excel"
+          >
+            Download Excel
+          </button>
+        </div>
+      </div>
+
       <div className="table-responsive">
         <table className="table table-bordered table-sm align-middle text-center">
           <thead className="table-light">

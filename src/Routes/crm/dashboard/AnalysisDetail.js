@@ -143,7 +143,7 @@ export default function AnalysisDetail({ match }) {
                                         value={selectedHistoryId}
                                         onChange={(e) => handleSelectHistory(e.target.value)}
                                     >
-                                        <option value="">Select Previous Analysis</option>
+                                        <option disabled value="">Select Previous Analysis</option>
                                         {finalHistoryList.map((item) => (
                                             <option key={item.id} value={item.id}>
                                                 {`${item.monthName} ${item.year}`}

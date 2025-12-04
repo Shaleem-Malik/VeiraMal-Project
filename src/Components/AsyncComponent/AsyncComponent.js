@@ -61,6 +61,11 @@ const AsynQuickActions = Loadable({
 const AsynSubCompaniesManagement = Loadable({
 	loader:() => import("Routes/dashboard/agency/SubCompaniesManagement"),
 	loading: () => <RctPageLoader />,
+});
+
+const AsynUserProfile = Loadable({
+	loader:() => import("Components/Sidebar/UserProfile"),
+	loading: () => <RctPageLoader />,
 })
 
 
@@ -75,5 +80,6 @@ export {
 	AsyncLiveAnalysisDetailComponent,
 	AsyncLiveCompanyDetailsComponent,
 	AsynQuickActions,
-	AsynSubCompaniesManagement
+	AsynSubCompaniesManagement,
+	AsynUserProfile
 };

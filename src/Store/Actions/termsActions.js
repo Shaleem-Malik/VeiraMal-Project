@@ -62,6 +62,99 @@ export const uploadTermsFile = (file) => async (dispatch) => {
   }
 };
 
+function _getFileNameFromContentDisposition(header) {
+  if (!header) return null;
+  const fileNameMatch = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(header);
+  if (fileNameMatch != null && fileNameMatch[1]) {
+    return fileNameMatch[1].replace(/['"]/g, '');
+  }
+  return null;
+}
+
+export const exportTermsAnalysis = () => async (dispatch) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}terms/analysis/export`, { responseType: 'blob' });
+
+    if (response.status === 204 || !response.data || response.data.size === 0) {
+      NotificationManager.info('No turnover data available to export.');
+      return;
+    }
+
+    const disposition = response.headers['content-disposition'] || response.headers['Content-Disposition'];
+    const filename = _getFileNameFromContentDisposition(disposition) || `Turnover_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'')}.xlsx`;
+
+    const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    NotificationManager.success('Turnover analysis exported successfully.');
+  } catch (err) {
+    let message = 'Failed to export turnover analysis.';
+    if (err.response && err.response.data) {
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const txt = reader.result;
+          NotificationManager.error(txt || message);
+        };
+        reader.readAsText(err.response.data);
+      } catch {
+        NotificationManager.error(message);
+      }
+    } else {
+      NotificationManager.error(err.message || message);
+    }
+  }
+};
+
+export const exportTermsFinance = (month) => async (dispatch) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}terms/finance-analysis/export?month=${encodeURIComponent(month)}`, { responseType: 'blob' });
+
+    if (response.status === 204 || !response.data || response.data.size === 0) {
+      NotificationManager.info('No finance terms data available to export for the selected month.');
+      return;
+    }
+
+    const disposition = response.headers['content-disposition'] || response.headers['Content-Disposition'];
+    const filename = _getFileNameFromContentDisposition(disposition) || `Terms_Finance_${month}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'')}.xlsx`;
+
+    const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    NotificationManager.success('Terms finance analysis exported successfully.');
+  } catch (err) {
+    let message = 'Failed to export finance terms analysis.';
+    if (err.response && err.response.data) {
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const txt = reader.result;
+          NotificationManager.error(txt || message);
+        };
+        reader.readAsText(err.response.data);
+      } catch {
+        NotificationManager.error(message);
+      }
+    } else {
+      NotificationManager.error(err.message || message);
+    }
+  }
+};
+
 // INITIAL STATE
 const initialState = {
   loading: false,

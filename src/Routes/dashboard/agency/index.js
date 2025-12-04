@@ -55,6 +55,10 @@ import CompanySummary from './CompanySummary';
 import EmployeeList from './EmployeeList';
 
 const useStyles = makeStyles((theme) => ({
+  root: {
+    minHeight: '85vh',
+    padding: theme.spacing(4, 0),
+  },
   modal: {
     '& .MuiDialog-paper': {
       borderRadius: 16,
@@ -334,7 +338,7 @@ export default function AgencyDashboard({ match }) {
   const businessUnitsCount = businessUnitsMeta.length;
 
   return (
-    <div className="agency-dashboard-wrapper">
+    <div className={`${classes.root}  agency-dashboard-wrapper`}>
       <Helmet>
         <title>Company Profile</title>
         <meta name="description" content="Employee Management Dashboard - View and Manage Employees" />

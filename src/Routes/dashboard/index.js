@@ -13,7 +13,8 @@ import {
    AsyncLiveAnalysisDetailComponent,
    AsyncLiveCompanyDetailsComponent,
    AsynQuickActions,
-   AsynSubCompaniesManagement
+   AsynSubCompaniesManagement,
+   AsynUserProfile
 } from 'Components/AsyncComponent/AsyncComponent';
 
 const Dashboard = ({ match }) => (
@@ -28,6 +29,7 @@ const Dashboard = ({ match }) => (
          <Route path={`${match.url}/company-details`} component={AsyncLiveCompanyDetailsComponent} />
          <Route path={`${match.url}/quick-actions`} component={AsynQuickActions} />
          <Route path={`${match.url}/subcompanies-management`} component={AsynSubCompaniesManagement} />
+         <Route path={`${match.url}/user-profile`} component={AsynUserProfile} />
       </Switch>
    </div>
 );

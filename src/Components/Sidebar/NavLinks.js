@@ -25,12 +25,12 @@ let sidebarMenu = {
                "menu_title": "TM Dashboard",
                "roles": ["Team Manager"]
             },
-            {
-               "path": "/app/dashboard/news",
-               "new_item": true,
-               "menu_title": "sidebar.news",
-               "roles": ["superUser", "Team Manager", "CEO"]
-            },
+            // {
+            //    "path": "/app/dashboard/news",
+            //    "new_item": true,
+            //    "menu_title": "sidebar.news",
+            //    "roles": ["superUser", "Team Manager", "CEO"]
+            // },
             {
                "path": "/app/dashboard/agency",
                "new_item": false,

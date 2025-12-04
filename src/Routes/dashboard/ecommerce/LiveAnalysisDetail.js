@@ -22,18 +22,17 @@ import {
     fetchHistoryDetail,
 } from "Store/Actions/historyActions";
 
-
 export default function AnalysisDetail({ match }) {
     const history = useHistory();
     const dispatch = useDispatch();
     const { saving, historyList, loadingList, historyDetail } = useSelector((state) => state.history);
     const [viewMode, setViewMode] = useState('chart');
     const [selectedHistoryId, setSelectedHistoryId] = useState("");
-    const [showPopup, setShowPopup] = useState(false); // ✅ New state for modal
+    const [showSaveOptionsModal, setShowSaveOptionsModal] = useState(false);
+    const [showSavePrompt, setShowSavePrompt] = useState(false);
 
     const [year, setYear] = useState(new Date().getFullYear());
     const [month, setMonth] = useState(new Date().getMonth() + 1);
-
 
     const [visibleSections, setVisibleSections] = useState(() => {
         const stored = JSON.parse(localStorage.getItem("uploadedFiles")) || [];
@@ -62,19 +61,35 @@ export default function AnalysisDetail({ match }) {
             });
         };
 
+        const handleShowSavePrompt = () => {
+            setShowSavePrompt(true);
+        };
+
         window.addEventListener("filesUploaded", handleFilesUploaded);
-        return () => window.removeEventListener("filesUploaded", handleFilesUploaded);
+        window.addEventListener("showSaveAnalysisPrompt", handleShowSavePrompt);
+        
+        return () => {
+            window.removeEventListener("filesUploaded", handleFilesUploaded);
+            window.removeEventListener("showSaveAnalysisPrompt", handleShowSavePrompt);
+        };
     }, []);
 
     const handleSaveHistory = () => {
-        setShowPopup(true); // ✅ Show confirmation modal
+        setShowSaveOptionsModal(true);
     };
 
     const handleConfirmSave = (isFinal) => {
-        setShowPopup(false);
+        setShowSaveOptionsModal(false);
         dispatch(saveAllAnalysisHistory(isFinal, year, month)).then(() => {
             dispatch(fetchHistoryList());
         });
+    };
+
+    const handleSavePrompt = (save) => {
+        setShowSavePrompt(false);
+        if (save) {
+            setShowSaveOptionsModal(true);
+        }
     };
 
     const handleSelectHistory = (id) => {
@@ -143,7 +158,7 @@ export default function AnalysisDetail({ match }) {
                                 value={selectedHistoryId}
                                 onChange={(e) => handleSelectHistory(e.target.value)}
                             >
-                                <option value="">Select Previous Analysis</option>
+                                <option disabled value="">Select Previous Analysis</option>
                                 {historyList.map((item) => (
                                     <option key={item.id} value={item.id}>
                                         {`${item.monthName} ${item.year}`} {item.isFinal ? "(Final)" : "(Draft)"}
@@ -154,7 +169,6 @@ export default function AnalysisDetail({ match }) {
                     </div>
                 </div>
             </div>
-
 
             {/* Checkbox Toggle Section */}
             <div className="section-toggle">
@@ -219,14 +233,36 @@ export default function AnalysisDetail({ match }) {
                 </div>
             </div>
 
-            {/* ✅ Confirmation Popup */}
-            {showPopup && (
+            {/* ✅ First Modal: Save Analysis Prompt */}
+            {showSavePrompt && (
+                <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Save Analysis</h5>
+                                <button type="button" className="btn-close" onClick={() => handleSavePrompt(false)}></button>
+                            </div>
+                            <div className="modal-body text-center">
+                                <p className="mb-3">Files uploaded successfully!</p>
+                                <p className="mb-0">Do you want to save this analysis?</p>
+                            </div>
+                            <div className="modal-footer justify-content-center">
+                                <button className="btn btn-secondary" onClick={() => handleSavePrompt(false)}>No</button>
+                                <button className="btn btn-primary" onClick={() => handleSavePrompt(true)}>Yes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ✅ Second Modal: Save Options (Final/Draft) */}
+            {showSaveOptionsModal && (
                 <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}>
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h5 className="modal-title">Confirm Save</h5>
-                                <button type="button" className="btn-close" onClick={() => setShowPopup(false)}></button>
+                                <h5 className="modal-title">Save Analysis</h5>
+                                <button type="button" className="btn-close" onClick={() => setShowSaveOptionsModal(false)}></button>
                             </div>
                             <div className="modal-body">
                                 <p>Select <strong>Year</strong> and <strong>Month</strong> for this analysis:</p>
@@ -258,7 +294,7 @@ export default function AnalysisDetail({ match }) {
                                 <p>Do you want to mark this analysis as <strong>Final</strong> or save as Draft?</p>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setShowPopup(false)}>Cancel</button>
+                                <button className="btn btn-secondary" onClick={() => setShowSaveOptionsModal(false)}>Cancel</button>
                                 <button
                                     className="btn btn-warning"
                                     onClick={() => handleConfirmSave(false)}

@@ -2,7 +2,7 @@
  * Signin Firebase
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector  } from 'react-redux';
 import { Button, AppBar, Toolbar } from '@material-ui/core';
 import { Link } from 'react-router-dom';
@@ -11,57 +11,94 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 import QueueAnim from 'rc-queue-anim';
 import { Helmet } from "react-helmet";
 
-// import { Fab } from "@material-ui/core";
-
-// components
-// import { SessionSlider } from 'Components/Widgets';
-
-// app config
-import AppConfig from 'Constants/AppConfig';
-
 // redux action
 import {
    signinUserInFirebase
 } from 'Store/Actions';
 
-//Auth File
-// import Auth from 'Auth/Auth';
-
-// const auth = new Auth();
-
 function Signin(props) {
 
-   const [email, setEmail] = useState('mujahidnawaz686@gmail.com');
-   const [password, setPassword] = useState('mujahidnawaz');
+   const [email, setEmail] = useState('');
+   const [password, setPassword] = useState('');
+   const [formErrors, setFormErrors] = useState({});
+   const formRef = useRef(null);
    const dispatch = useDispatch();
    const loading = useSelector(state => state.loading);
 
-	/**
-	 * On User Login
-	 */
-   const onUserLogin = () => {
-      if (email !== '' && password !== '') {
+   // Handle Enter key press
+   useEffect(() => {
+      const handleKeyPress = (event) => {
+         if (event.key === 'Enter') {
+            event.preventDefault();
+            onUserLogin();
+         }
+      };
+
+      // Add event listener to form
+      const form = formRef.current;
+      if (form) {
+         form.addEventListener('keypress', handleKeyPress);
+      }
+
+      // Clean up
+      return () => {
+         if (form) {
+            form.removeEventListener('keypress', handleKeyPress);
+         }
+      };
+   }, [email, password]); // Re-run when email or password changes
+
+   // Validate form
+   const validateForm = () => {
+      const errors = {};
+      
+      if (!email) {
+         errors.email = 'Email is required';
+      } else if (!/\S+@\S+\.\S+/.test(email)) {
+         errors.email = 'Email is invalid';
+      }
+      
+      if (!password) {
+         errors.password = 'Password is required';
+      } else if (password.length < 6) {
+         errors.password = 'Password must be at least 6 characters';
+      }
+      
+      setFormErrors(errors);
+      return Object.keys(errors).length === 0;
+   };
+
+   /**
+    * On User Login
+    */
+   const onUserLogin = (e) => {
+      if (e) e.preventDefault();
+      
+      if (validateForm()) {
          dispatch(signinUserInFirebase({email,password}, props.history));
       }
    }
 
-	/**
-	 * On User Sign Up
-	 */
+   /**
+    * On User Sign Up
+    */
    const onUserSignUp = () =>  {
       props.history.push('/signup');
    }
 
-   //Auth0 Login
-   // const loginAuth0 = () => {
-   //    auth.login();
-   // }
-
    const onForgotPassword = (e) => {
-     e && e.preventDefault();
-     if (props.history && typeof props.history.push === 'function') {
-       props.history.push('/forgot-password');
-     }
+      e && e.preventDefault();
+      if (props.history && typeof props.history.push === 'function') {
+         props.history.push('/forgot-password');
+      }
+   };
+
+   // Handle Enter key in input fields
+   const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+         e.preventDefault();
+         onUserLogin();
+      }
    };
 
    return (
@@ -80,12 +117,11 @@ function Signin(props) {
                      <div className="d-flex justify-content-between">
                         <div className="session-logo">
                            <Link to="/">
-                              {/* <img src={AppConfig.appLogo} alt="session-logo" className="img-fluid" width="110" height="35" /> */}
                               <h1 className='font-weight-bold text-dark'>HR Analytix</h1>
                            </Link>
                         </div>
                         <div>
-                           <a href="!#" className="mr-15 text-dark" onClick={onUserSignUp}>Create New account?</a>
+                           <a href="#!" className="mr-15 text-dark" onClick={(e) => { e.preventDefault(); onUserSignUp(); }}>Create New account?</a>
                            <Button variant="contained" className="btn-light" onClick={onUserSignUp}>Sign Up</Button>
                         </div>
                      </div>
@@ -108,90 +144,73 @@ function Signin(props) {
                               <h2 className="font-weight-bold">HR Analytix Portal</h2>
                               <p className="mb-0">Most powerful HR Analysis Software</p>
                            </div>
-                           <Form>
+                           {/* Form with onSubmit handler */}
+                           <Form 
+                              onSubmit={onUserLogin} 
+                              innerRef={formRef}
+                           >
                               <FormGroup className="has-wrapper">
                                  <Input
-                                    type="mail"
+                                    type="email"
                                     value={email}
                                     name="user-mail"
                                     id="user-mail"
                                     className="has-input input-lg"
                                     placeholder="Enter Email Address"
                                     onChange={(event) => setEmail(event.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    invalid={formErrors.email}
                                  />
                                  <span className="has-icon"><i className="ti-email"></i></span>
+                                 {formErrors.email && (
+                                    <div className="text-danger text-left mt-1 small">
+                                       {formErrors.email}
+                                    </div>
+                                 )}
                               </FormGroup>
                               <FormGroup className="has-wrapper">
                                  <Input
                                     value={password}
-                                    type="Password"
+                                    type="password"
                                     name="user-pwd"
                                     id="pwd"
                                     className="has-input input-lg"
                                     placeholder="Password"
                                     onChange={(event) => setPassword(event.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    invalid={formErrors.password}
                                  />
                                  <span className="has-icon"><i className="ti-lock"></i></span>
+                                 {formErrors.password && (
+                                    <div className="text-danger text-left mt-1 small">
+                                       {formErrors.password}
+                                    </div>
+                                 )}
                               </FormGroup>
 
-                              {/* ADD: Forgot password link */}
                               <div style={{ textAlign: 'right', marginBottom: 12 }}>
-                                {/* Using Link for client-side routing; also keep handler for consistency */}
-                                <Link to="/forgot-password" onClick={onForgotPassword} className="text-dark" style={{ textDecoration: 'none' }}>
-                                  Forgot password?
-                                </Link>
+                                 <Link to="/forgot-password" onClick={onForgotPassword} className="text-dark" style={{ textDecoration: 'none' }}>
+                                    Forgot password?
+                                 </Link>
                               </div>
 
                               <FormGroup className="mb-15">
                                  <Button
+                                    type="submit"
                                     color="primary"
                                     className="btn-block text-white w-100"
                                     variant="contained"
                                     size="large"
-                                    onClick={onUserLogin}
+                                    // onClick handler removed since we're using form onSubmit
                                  >
                                     Sign In
                                  </Button>
                               </FormGroup>
-                              {/* <FormGroup className="mb-15">
-                                 <Button
-                                    variant="contained"
-                                    className="btn-info btn-block text-white w-100"
-                                    size="large"
-                                    onClick={loginAuth0}
-                                 >
-                                    Sign In With Auth0
-                                 </Button>
-                              </FormGroup> */}
                            </Form>
-                           {/* <p className="mb-20">or sign in with</p>
-                           <Fab size="small" variant="round" className="btn-facebook mr-15 mb-20 text-white"
-                              onClick={() => dispatch(signinUserWithFacebook(props.history))}
-                           >
-                              <i className="zmdi zmdi-facebook"></i>
-                           </Fab>
-                           <Fab size="small" variant="round" className="btn-google mr-15 mb-20 text-white"
-                              onClick={() => dispatch(signinUserWithGoogle(props.history))}
-                           >
-                              <i className="zmdi zmdi-google"></i>
-                           </Fab>
-                           <Fab size="small" variant="round" className="btn-twitter mr-15 mb-20 text-white"
-                              onClick={() => dispatch(signinUserWithTwitter(props.history))}
-                           >
-                              <i className="zmdi zmdi-twitter"></i>
-                           </Fab>
-                           <Fab size="small" variant="round" className="btn-instagram mr-15 mb-20 text-white"
-                              onClick={() => dispatch(signinUserWithGithub(props.history))}
-                           >
-                              <i className="zmdi zmdi-github-alt"></i>
-                           </Fab> */}
-                           <p className="text-muted">By signing up you agree to {AppConfig.brandName}</p>
+                           <p className="text-muted">By signing up you agree to HR Analytix</p>
                            <p className="mb-0"><a target="_blank" href="#/terms-condition" className="text-muted" rel="noreferrer">Terms of Service</a></p>
                         </div>
                      </div>
-                     {/* <div className="col-sm-5 col-md-5 col-lg-4">
-                        <SessionSlider />
-                     </div> */}
                   </div>
                </div>
             </div>
