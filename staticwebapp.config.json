@@ -1,0 +1,23 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/favicon.ico",
+      "/robots.txt",
+      "/static/*",
+      "/css/*",
+      "/js/*",
+      "/assets/*",
+      "/images/*",
+      "/api/*"
+    ]
+  },
+  "routes": [
+    {
+      "route": "/VeiraMal-Project/*",
+      "rewrite": "/index.html"
+    }
+  ],
+  "responseOverrides": {},
+  "globalHeaders": {}
+}
