@@ -17,7 +17,7 @@ function NavMenuItem(props) {
     return (
       <Fragment>
         {/* Top level menu item - removed onClick handler for collapse */}
-        <ListItem 
+        {/* <ListItem 
           button 
           component="li" 
           className={`list-item ${classNames({ 'item-active': menu.open })}`}
@@ -33,7 +33,7 @@ function NavMenuItem(props) {
           ) : (
             ''
           )}
-        </ListItem>
+        </ListItem> */}
         
         {/* Always show sub-menu - removed Collapse component */}
         <div className="sub-menu">

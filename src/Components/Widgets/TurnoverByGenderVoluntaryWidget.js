@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { fetchHistoryList, fetchHistoryDetail } from "../../Store/Actions/historyActions";
+import { fetchHistoryDetail } from "../../Store/Actions/historyActions";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -12,49 +12,63 @@ const TurnoverByGenderVoluntaryWidget = () => {
     (state) => state.history
   );
 
-  useEffect(() => {
-    dispatch(fetchHistoryList());
-  }, [dispatch]);
+  const didRequestDetailRef = useRef(false);
+  const didAnimateRef = useRef(false);
 
-  useEffect(() => {
-    if (historyList.length > 0) {
-      const recentId = historyList[0].id;
-      dispatch(fetchHistoryDetail(recentId));
-    }
-  }, [dispatch, historyList]);
+  const totals = useMemo(() => {
+    const finalData = historyDetail?.terms || [];
+    const totalVoluntaryMale = finalData.reduce((sum, row) => sum + (row?.voluntaryMaleCount ?? 0), 0);
+    const totalVoluntaryFemale = finalData.reduce((sum, row) => sum + (row?.voluntaryFemaleCount ?? 0), 0);
+    return { finalData, totalVoluntaryMale, totalVoluntaryFemale };
+  }, [historyDetail]);
 
-  if (loadingList || loadingDetail) return <p className="m-2">Loading saved analysis...</p>;
-  if (error) return <p className="m-2 text-danger">Error: {error}</p>;
-  if (!historyDetail?.terms?.length) return <p className="m-2">No saved turnover analysis available.</p>;
-
-  const finalData = historyDetail.terms;
-
-  const totalVoluntaryMale = finalData.reduce((sum, row) => sum + (row.voluntaryMaleCount ?? 0), 0);
-  const totalVoluntaryFemale = finalData.reduce((sum, row) => sum + (row.voluntaryFemaleCount ?? 0), 0);
-
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: ["Male", "Female"],
     datasets: [
       {
-        data: [totalVoluntaryMale, totalVoluntaryFemale],
+        data: [totals.totalVoluntaryMale, totals.totalVoluntaryFemale],
         backgroundColor: ["#36A2EB", "#FF6384"],
         hoverBackgroundColor: ["#1E88E5", "#E91E63"],
         borderWidth: 1,
       },
     ],
-  };
+  }), [totals.totalVoluntaryMale, totals.totalVoluntaryFemale]);
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: { position: "bottom" },
-      tooltip: {
-        callbacks: {
-          label: (context) => `${context.label}: ${context.raw} employees`,
+  const options = useMemo(() => {
+    const base = {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.label}: ${context.raw} employees`,
+          },
         },
       },
-    },
-  };
+      animation: {
+        duration: didAnimateRef.current ? 0 : 700,
+      },
+    };
+    didAnimateRef.current = true;
+    return base;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totals.totalVoluntaryMale, totals.totalVoluntaryFemale]);
+
+  useEffect(() => {
+    if (
+      !didRequestDetailRef.current &&
+      Array.isArray(historyList) &&
+      historyList.length > 0 &&
+      (!historyDetail || historyDetail.id !== historyList[0].id)
+    ) {
+      didRequestDetailRef.current = true;
+      dispatch(fetchHistoryDetail(historyList[0].id));
+    }
+  }, [historyList, historyDetail, dispatch]);
+
+  if (loadingList || loadingDetail) return <p className="m-2">Loading saved analysis...</p>;
+  if (error) return <p className="m-2 text-danger">Error: {error}</p>;
+  if (!totals.finalData || totals.finalData.length === 0) return <p className="m-2">No saved turnover analysis available.</p>;
 
   return (
     <div className="card p-3">

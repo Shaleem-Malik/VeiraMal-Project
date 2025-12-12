@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import PageTitleBar from 'Components/PageTitleBar/PageTitleBar';
 import { IconButton } from '@material-ui/core';
 import { ArrowBack } from '@material-ui/icons';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
 import IntlMessages from 'Util/IntlMessages';
 
@@ -26,6 +26,7 @@ import './CEODashboard.css';
 export default function AnalysisDetail({ match }) {
     const history = useHistory();
     const dispatch = useDispatch();
+    const location = useLocation();
     const { historyList, loadingList, historyDetail, ceoYtdData } = useSelector((state) => state.history);
 
     const [viewMode, setViewMode] = useState('chart');
@@ -74,6 +75,16 @@ export default function AnalysisDetail({ match }) {
 
     // Only Final Analyses for CEO
     const finalHistoryList = historyList.filter((item) => item.isFinal);
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const historyIdFromURL = queryParams.get('historyId');
+        
+        if (historyIdFromURL && historyIdFromURL !== selectedHistoryId) {
+          setSelectedHistoryId(historyIdFromURL);
+          dispatch(fetchHistoryDetail(historyIdFromURL));
+        }
+      }, [location.search]);
 
     return (
         <div className="modern-dashboard-wrapper">

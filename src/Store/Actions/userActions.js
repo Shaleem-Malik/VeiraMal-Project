@@ -45,6 +45,13 @@ const ADD_ACCESS_LEVEL_REQUEST = "ADD_ACCESS_LEVEL_REQUEST";
 const ADD_ACCESS_LEVEL_SUCCESS = "ADD_ACCESS_LEVEL_SUCCESS";
 const ADD_ACCESS_LEVEL_FAILURE = "ADD_ACCESS_LEVEL_FAILURE";
 
+const UPLOAD_PROFILE_PICTURE_REQUEST = "UPLOAD_PROFILE_PICTURE_REQUEST";
+const UPLOAD_PROFILE_PICTURE_SUCCESS = "UPLOAD_PROFILE_PICTURE_SUCCESS";
+const UPLOAD_PROFILE_PICTURE_FAILURE = "UPLOAD_PROFILE_PICTURE_FAILURE";
+const DELETE_PROFILE_PICTURE_REQUEST = "DELETE_PROFILE_PICTURE_REQUEST";
+const DELETE_PROFILE_PICTURE_SUCCESS = "DELETE_PROFILE_PICTURE_SUCCESS";
+const DELETE_PROFILE_PICTURE_FAILURE = "DELETE_PROFILE_PICTURE_FAILURE";
+
 // ========================
 // ACTION CREATORS
 // ========================
@@ -89,6 +96,14 @@ export const addAccessLevelRequest = () => ({ type: ADD_ACCESS_LEVEL_REQUEST });
 export const addAccessLevelSuccess = (data) => ({ type: ADD_ACCESS_LEVEL_SUCCESS, payload: data });
 export const addAccessLevelFailure = (error) => ({ type: ADD_ACCESS_LEVEL_FAILURE, payload: error });
 
+export const uploadProfilePictureRequest = () => ({ type: UPLOAD_PROFILE_PICTURE_REQUEST });
+export const uploadProfilePictureSuccess = (data) => ({ type: UPLOAD_PROFILE_PICTURE_SUCCESS, payload: data });
+export const uploadProfilePictureFailure = (error) => ({ type: UPLOAD_PROFILE_PICTURE_FAILURE, payload: error });
+
+export const deleteProfilePictureRequest = () => ({ type: DELETE_PROFILE_PICTURE_REQUEST });
+export const deleteProfilePictureSuccess = (data) => ({ type: DELETE_PROFILE_PICTURE_SUCCESS, payload: data });
+export const deleteProfilePictureFailure = (error) => ({ type: DELETE_PROFILE_PICTURE_FAILURE, payload: error });
+
 // ========================
 // CONFIG / HELPERS
 // ========================
@@ -108,7 +123,7 @@ export const fetchUsers = () => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to fetch users";
         dispatch(fetchUsersFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -128,7 +143,7 @@ export const createUser = (dto) => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to create user";
         dispatch(createUserFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -163,7 +178,7 @@ export const updateUser = (dto) => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to update user";
         dispatch(updateUserFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -185,7 +200,7 @@ export const inactivateUser = (id) => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to inactivate user";
         dispatch(inactivateUserFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -206,7 +221,7 @@ export const activateUser = (id) => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to activate user";
         dispatch(activateUserFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -238,7 +253,7 @@ export const uploadUsersExcel = (file) => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to upload users file";
         dispatch(uploadUsersFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -258,7 +273,7 @@ export const fetchBusinessUnits = () => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to load business units";
         dispatch(fetchBusinessUnitsFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -278,7 +293,7 @@ export const addBusinessUnit = (model) => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to add business unit";
         dispatch(addBusinessUnitFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -296,7 +311,7 @@ export const fetchAccessLevels = () => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to load access levels";
         dispatch(fetchAccessLevelsFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
@@ -316,11 +331,68 @@ export const addAccessLevel = (model) => async (dispatch) => {
     } catch (err) {
         const msg = err?.response?.data?.message || err.message || "Failed to add access level";
         dispatch(addAccessLevelFailure(msg));
-        
+
         // Don't show notification for multiple assignment errors
         if (!msg.includes('multiple subcompany assignments')) {
             NotificationManager.error(msg);
         }
+        throw err;
+    }
+};
+
+export const uploadProfilePicture = (userId, file, subCompanyId = null) => async (dispatch) => {
+    dispatch(uploadProfilePictureRequest());
+    try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        // Build query string if subCompanyId exists
+        let url = `${BASE_API}users/${userId}/profile-picture`;
+        if (subCompanyId) {
+            url += `?subCompanyId=${subCompanyId}`;
+        }
+
+        const resp = await apiWithCompany.post(url, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        dispatch(uploadProfilePictureSuccess({ userId, url: resp.data.url }));
+        NotificationManager.success("Profile picture uploaded successfully");
+
+        // Update user in the store with new profile picture URL
+        dispatch(fetchUsers()); // Refetch users to update the data
+
+        return resp.data;
+    } catch (err) {
+        const msg = err?.response?.data?.message || err.message || "Failed to upload profile picture";
+        dispatch(uploadProfilePictureFailure(msg));
+        NotificationManager.error(msg);
+        throw err;
+    }
+};
+
+export const deleteProfilePicture = (userId, subCompanyId = null) => async (dispatch) => {
+    dispatch(deleteProfilePictureRequest());
+    try {
+        let url = `${BASE_API}users/${userId}/profile-picture`;
+        if (subCompanyId) {
+            url += `?subCompanyId=${subCompanyId}`;
+        }
+
+        const resp = await apiWithCompany.delete(url);
+        dispatch(deleteProfilePictureSuccess({ userId }));
+        NotificationManager.success(resp?.data?.message || "Profile picture removed");
+
+        // Update user in the store
+        dispatch(fetchUsers()); // Refetch users to update the data
+
+        return resp.data;
+    } catch (err) {
+        const msg = err?.response?.data?.message || err.message || "Failed to delete profile picture";
+        dispatch(deleteProfilePictureFailure(msg));
+        NotificationManager.error(msg);
         throw err;
     }
 };
@@ -336,6 +408,9 @@ const initialState = {
     uploading: false,
     uploadProgress: 0,
     uploadError: null,
+
+    uploadingProfilePicture: false,
+    deletingProfilePicture: false,
 
     businessUnits: [],
     accessLevels: [],
@@ -397,6 +472,46 @@ export default function userReducer(state = initialState, action) {
         case ADD_BUSINESS_UNIT_SUCCESS:
         case ADD_ACCESS_LEVEL_SUCCESS:
             return { ...state };
+
+        case UPLOAD_PROFILE_PICTURE_REQUEST:
+            return { ...state, uploadingProfilePicture: true };
+        case UPLOAD_PROFILE_PICTURE_SUCCESS:
+            return {
+                ...state,
+                uploadingProfilePicture: false,
+                // Update user in the users array if needed
+                users: state.users.map(user => {
+                    const userId = user.userId || user.id || user.UserId || user.ID;
+                    if (String(userId) === String(action.payload.userId)) {
+                        return {
+                            ...user,
+                            profilePictureUrl: action.payload.url
+                        };
+                    }
+                    return user;
+                })
+            };
+        case UPLOAD_PROFILE_PICTURE_FAILURE:
+            return { ...state, uploadingProfilePicture: false, error: action.payload };
+
+        case DELETE_PROFILE_PICTURE_REQUEST:
+            return { ...state, deletingProfilePicture: true };
+        case DELETE_PROFILE_PICTURE_SUCCESS:
+            return {
+                ...state,
+                deletingProfilePicture: false,
+                // Update user in the users array
+                users: state.users.map(user => {
+                    const userId = user.userId || user.id || user.UserId || user.ID;
+                    if (String(userId) === String(action.payload.userId)) {
+                        const { profilePictureUrl, ...rest } = user;
+                        return rest; // Remove profile picture URL
+                    }
+                    return user;
+                })
+            };
+        case DELETE_PROFILE_PICTURE_FAILURE:
+            return { ...state, deletingProfilePicture: false, error: action.payload };
 
         default:
             return state;

@@ -1,10 +1,6 @@
-/**
- * Signin Firebase
- */
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector  } from 'react-redux';
-import { Button, AppBar, Toolbar } from '@material-ui/core';
+import { Button, AppBar, Toolbar, CircularProgress } from '@material-ui/core'; // added CircularProgress
 import { Link } from 'react-router-dom';
 import { Form, FormGroup, Input } from 'reactstrap';
 import LinearProgress from '@material-ui/core/LinearProgress';
@@ -23,7 +19,7 @@ function Signin(props) {
    const [formErrors, setFormErrors] = useState({});
    const formRef = useRef(null);
    const dispatch = useDispatch();
-   const loading = useSelector(state => state.loading);
+   const loading = useSelector(state => state.authUser.loading);
 
    // Handle Enter key press
    useEffect(() => {
@@ -73,6 +69,9 @@ function Signin(props) {
     */
    const onUserLogin = (e) => {
       if (e) e.preventDefault();
+
+      // prevent double submission while loading
+      if (loading) return;
       
       if (validateForm()) {
          dispatch(signinUserInFirebase({email,password}, props.history));
@@ -201,9 +200,17 @@ function Signin(props) {
                                     className="btn-block text-white w-100"
                                     variant="contained"
                                     size="large"
-                                    // onClick handler removed since we're using form onSubmit
+                                    disabled={loading}            // disable while loading
+                                    aria-busy={loading ? 'true' : 'false'}
                                  >
-                                    Sign In
+                                    {loading ? (
+                                       <>
+                                          <CircularProgress size={20} style={{ marginRight: 10 }} />
+                                          Signing In...
+                                       </>
+                                    ) : (
+                                       'Sign In'
+                                    )}
                                  </Button>
                               </FormGroup>
                            </Form>

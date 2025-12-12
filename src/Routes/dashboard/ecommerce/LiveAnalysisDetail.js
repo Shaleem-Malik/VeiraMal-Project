@@ -4,7 +4,7 @@ import PageTitleBar from 'Components/PageTitleBar/PageTitleBar';
 import { useDispatch, useSelector } from "react-redux";
 import { IconButton } from '@material-ui/core';
 import { ArrowBack } from '@material-ui/icons';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation  } from 'react-router-dom';
 import IntlMessages from 'Util/IntlMessages';
 import "../../crm/dashboard/CEODashboard.css";
 
@@ -25,6 +25,7 @@ import {
 export default function AnalysisDetail({ match }) {
     const history = useHistory();
     const dispatch = useDispatch();
+    const location = useLocation();
     const { saving, historyList, loadingList, historyDetail } = useSelector((state) => state.history);
     const [viewMode, setViewMode] = useState('chart');
     const [selectedHistoryId, setSelectedHistoryId] = useState("");
@@ -105,6 +106,16 @@ export default function AnalysisDetail({ match }) {
         "", "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     ];
+
+    useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const historyIdFromURL = queryParams.get('historyId');
+    
+    if (historyIdFromURL && historyIdFromURL !== selectedHistoryId) {
+      setSelectedHistoryId(historyIdFromURL);
+      dispatch(fetchHistoryDetail(historyIdFromURL));
+    }
+  }, [location.search]);
 
     return (
         <div className="modern-dashboard-wrapper">

@@ -68,6 +68,15 @@ export default function CrmDashboard({ match }) {
     }
   };
 
+   const handleShowDetailedAnalysis = () => {
+    if (selectedHistoryId) {
+      // Pass the selected history ID as a URL parameter
+      history.push(`/dashboard/crm/analysis-detail?historyId=${selectedHistoryId}`);
+    } else {
+      // If no analysis is selected, navigate without parameter
+      history.push('/dashboard/crm/analysis-detail');
+    }
+  };
 
   return (
     <div className="modern-dashboard-wrapper">
@@ -84,7 +93,7 @@ export default function CrmDashboard({ match }) {
           <div className="controls-left">
             <button
               className="btn btn-primary"
-              onClick={() => history.push("/dashboard/crm/analysis-detail")}
+              onClick={handleShowDetailedAnalysis}
             >
               Show Detailed Analysis
             </button>

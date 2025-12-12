@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { fetchHistoryDetail, fetchHistoryList } from "../../Store/Actions/historyActions";
+import { fetchHistoryDetail } from "../../Store/Actions/historyActions";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -12,19 +12,64 @@ const NhtNewHiresGenderPieWidget = () => {
     (state) => state.history
   );
 
-  // On first load → get history list
-  useEffect(() => {
-    dispatch(fetchHistoryList());
-  }, [dispatch]);
+  // Top-level refs & memos (must run every render)
+  const didRequestDetailRef = useRef(false);
+  const didAnimateRef = useRef(false);
 
-  // Once list is loaded → fetch the most recent analysis (first item)
+  const totals = useMemo(() => {
+    const finalData = historyDetail?.nht || [];
+    const totalMale = finalData.reduce((sum, row) => sum + (row?.newHireMale ?? 0), 0);
+    const totalFemale = finalData.reduce((sum, row) => sum + (row?.newHireFemale ?? 0), 0);
+    return { finalData, totalMale, totalFemale };
+  }, [historyDetail]);
+
+  const chartData = useMemo(() => ({
+    labels: ["Male", "Female"],
+    datasets: [
+      {
+        data: [totals.totalMale, totals.totalFemale],
+        backgroundColor: ["#4BC0C0", "#FF9F40"],
+        hoverBackgroundColor: ["#009688", "#F57C00"],
+        borderWidth: 1,
+      },
+    ],
+  }), [totals.totalMale, totals.totalFemale]);
+
+  const options = useMemo(() => {
+    const base = {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.label}: ${context.raw} hires`,
+          },
+        },
+      },
+      animation: {
+        duration: didAnimateRef.current ? 0 : 700,
+      },
+    };
+    // mark that we've animated once
+    didAnimateRef.current = true;
+    return base;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totals.totalMale, totals.totalFemale]);
+
+  // Request detail once when historyList becomes available
   useEffect(() => {
-    if (historyList.length > 0) {
-      const recentId = historyList[0].id; // ✅ latest saved analysis
-      dispatch(fetchHistoryDetail(recentId));
+    if (
+      !didRequestDetailRef.current &&
+      Array.isArray(historyList) &&
+      historyList.length > 0 &&
+      (!historyDetail || historyDetail.id !== historyList[0].id)
+    ) {
+      didRequestDetailRef.current = true;
+      dispatch(fetchHistoryDetail(historyList[0].id));
     }
-  }, [dispatch, historyList]);
+  }, [historyList, historyDetail, dispatch]);
 
+  // Early returns (hooks already executed)
   if (loadingList || loadingDetail) {
     return <p className="m-2">Loading saved analysis...</p>;
   }
@@ -33,41 +78,9 @@ const NhtNewHiresGenderPieWidget = () => {
     return <p className="m-2 text-danger">Error: {error}</p>;
   }
 
-  if (!historyDetail || !historyDetail.nht || !historyDetail.nht.length) {
+  if (!totals.finalData || totals.finalData.length === 0) {
     return <p className="m-2">No saved New Hire analysis available.</p>;
   }
-
-  const finalData = historyDetail.nht;
-
-  // ✅ Aggregate gender counts across all departments
-  const totalMale = finalData.reduce((sum, row) => sum + (row.newHireMale ?? 0), 0);
-  const totalFemale = finalData.reduce((sum, row) => sum + (row.newHireFemale ?? 0), 0);
-
-  const chartData = {
-    labels: ["Male", "Female"],
-    datasets: [
-      {
-        data: [totalMale, totalFemale],
-        backgroundColor: ["#4BC0C0", "#FF9F40"],
-        hoverBackgroundColor: ["#009688", "#F57C00"],
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "bottom",
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => `${context.label}: ${context.raw} hires`,
-        },
-      },
-    },
-  };
 
   return (
     <div className="card p-3">

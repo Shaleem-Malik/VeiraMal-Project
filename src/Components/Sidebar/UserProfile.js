@@ -18,7 +18,12 @@ import {
     LinearProgress,
     Snackbar,
     CircularProgress,
-    Box
+    Box,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle
 } from '@material-ui/core';
 import {
     Visibility,
@@ -34,12 +39,13 @@ import {
     Business as BusinessIcon,
     Security as SecurityIcon,
     Error as ErrorIcon,
-    Close as CloseIcon
+    Close as CloseIcon,
+    Delete as DeleteIcon
 } from '@material-ui/icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-// Import the fetchUsers action
-import { fetchUsers } from 'Store/Actions/userActions';
+// Import the actions including new ones
+import { fetchUsers, uploadProfilePicture, deleteProfilePicture } from 'Store/Actions/userActions';
 
 // Helper function to normalize metadata label
 function normalizeMetaLabel(item) {
@@ -76,7 +82,11 @@ const UserProfileComponent = () => {
         severity: 'success'
     });
     const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const fileInputRef = useRef(null);
+
+    const BASE_URL = (process.env.REACT_APP_BASE_URL || 'http://localhost:5228/api/').replace('/api/', '').replace('/api', '');
 
     // Fetch users when component mounts
     useEffect(() => {
@@ -94,11 +104,8 @@ const UserProfileComponent = () => {
             const foundUser = userState.users.find(user => {
                 // Try different ID property names
                 const userId = user.userId || user.id || user.UserId || user.ID;
-                console.log('Checking user:', user, 'with ID:', userId, 'against:', currentUserId);
                 return String(userId) === String(currentUserId);
             });
-            
-            console.log('Found user:', foundUser);
             
             if (foundUser) {
                 // Build businessUnits array from multiple possible shapes
@@ -114,8 +121,12 @@ const UserProfileComponent = () => {
                 // Build access level string
                 const accessLevel = normalizeMetaLabel(foundUser.accessLevel || foundUser.AccessLevel);
                 
+                // Get profile picture URL - check multiple possible properties
+                const profilePicUrl = foundUser.profilePictureUrl || foundUser.profilePicUrl || foundUser.profilePicture || foundUser.profilePic;
+                
                 // Map the user data to our component's structure
                 const mappedUserData = {
+                    userId: foundUser.userId || foundUser.id || foundUser.UserId || foundUser.ID,
                     firstName: foundUser.firstName || foundUser.FirstName || '',
                     middleName: foundUser.middleName || foundUser.MiddleName || '',
                     lastName: foundUser.lastName || foundUser.LastName || '',
@@ -124,50 +135,35 @@ const UserProfileComponent = () => {
                     accessLevel: accessLevel || 'Not specified',
                     contactNumber: foundUser.contactNumber || foundUser.ContactNumber || foundUser.phone || foundUser.Phone || 'Not provided',
                     location: foundUser.location || foundUser.Location || companyState?.company?.location || 'Not specified',
-                    profilePic: foundUser.profilePic || null,
-                    isActive: foundUser.isActive !== undefined ? foundUser.isActive : (foundUser.IsActive !== undefined ? foundUser.IsActive : true)
+                    profilePic: profilePicUrl ? `${BASE_URL}${profilePicUrl}` : null,
+                    isActive: foundUser.isActive !== undefined ? foundUser.isActive : (foundUser.IsActive !== undefined ? foundUser.IsActive : true),
+                    companyId: foundUser.companyId || foundUser.CompanyId
                 };
                 
                 console.log('Mapped user data:', mappedUserData);
                 setUserData(mappedUserData);
             } else {
                 console.log('User not found in users list');
-                // Fallback: Get user from currentUser in Redux or localStorage
-                const currentUser = userState.currentUser;
-                if (currentUser) {
-                    setUserData({
-                        firstName: currentUser.firstName || '',
-                        middleName: currentUser.middleName || '',
-                        lastName: currentUser.lastName || '',
-                        email: currentUser.email || '',
-                        businessUnits: currentUser.businessUnits || ['Not assigned'],
-                        accessLevel: currentUser.accessLevel || 'Not specified',
-                        contactNumber: currentUser.contactNumber || 'Not provided',
-                        location: currentUser.location || 'Not specified',
-                        profilePic: currentUser.profilePic || null,
-                        isActive: true
-                    });
-                } else {
-                    // Try to get from localStorage
-                    const storedUserData = localStorage.getItem('user');
-                    if (storedUserData) {
-                        try {
-                            const parsedUser = JSON.parse(storedUserData);
-                            setUserData({
-                                firstName: parsedUser.firstName || '',
-                                middleName: parsedUser.middleName || '',
-                                lastName: parsedUser.lastName || '',
-                                email: parsedUser.email || '',
-                                businessUnits: parsedUser.businessUnits || ['Not assigned'],
-                                accessLevel: parsedUser.accessLevel || 'Not specified',
-                                contactNumber: parsedUser.contactNumber || 'Not provided',
-                                location: parsedUser.location || 'Not specified',
-                                profilePic: null,
-                                isActive: true
-                            });
-                        } catch (error) {
-                            console.error('Error parsing stored user data:', error);
-                        }
+                // Fallback: Get user from localStorage
+                const storedUserData = localStorage.getItem('user');
+                if (storedUserData) {
+                    try {
+                        const parsedUser = JSON.parse(storedUserData);
+                        setUserData({
+                            userId: currentUserId,
+                            firstName: parsedUser.firstName || '',
+                            middleName: parsedUser.middleName || '',
+                            lastName: parsedUser.lastName || '',
+                            email: parsedUser.email || '',
+                            businessUnits: parsedUser.businessUnits || ['Not assigned'],
+                            accessLevel: parsedUser.accessLevel || 'Not specified',
+                            contactNumber: parsedUser.contactNumber || 'Not provided',
+                            location: parsedUser.location || 'Not specified',
+                            profilePic: null,
+                            isActive: true
+                        });
+                    } catch (error) {
+                        console.error('Error parsing stored user data:', error);
                     }
                 }
             }
@@ -179,7 +175,7 @@ const UserProfileComponent = () => {
         if (!userState.loading) {
             setLoading(false);
         }
-    }, [userState, companyState]);
+    }, [userState, companyState, BASE_URL]);
 
     // Password validation rules
     const passwordRules = {
@@ -224,7 +220,7 @@ const UserProfileComponent = () => {
         setShowPassword(prev => ({ ...prev, [field]: !prev[field] }));
     };
 
-    // Handle profile picture upload
+    // Handle profile picture upload selection
     const handleProfilePicUpload = (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -265,25 +261,37 @@ const UserProfileComponent = () => {
         fileInputRef.current.click();
     };
 
-    // Save profile picture
-    const saveProfilePic = () => {
-        // In real app, upload to backend API
-        if (profilePicFile) {
-            setUserData(prev => ({ ...prev, profilePic: profilePicPreview }));
+    // Save profile picture to backend
+    const saveProfilePic = async () => {
+        if (!profilePicFile || !userData) return;
+
+        setUploading(true);
+        try {
+            // Get subCompanyId if available (you might need to adjust this based on your app structure)
+            const subCompanyId = localStorage.getItem('subCompanyId') || null;
+            
+            await dispatch(uploadProfilePicture(userData.userId, profilePicFile, subCompanyId));
+            
+            // The Redux state will be updated via fetchUsers in the action
+            setProfilePicFile(null);
+            setProfilePicPreview(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            
             setSnackbar({
                 open: true,
-                message: 'Profile picture updated successfully',
+                message: 'Profile picture uploaded successfully',
                 severity: 'success'
             });
-
-            // Simulate API call
-            setTimeout(() => {
-                setProfilePicFile(null);
-                setProfilePicPreview(null);
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
-            }, 3000);
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to upload profile picture',
+                severity: 'error'
+            });
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -294,6 +302,45 @@ const UserProfileComponent = () => {
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+    };
+
+    // Handle delete profile picture
+    const handleDeleteProfilePicture = async () => {
+        if (!userData) return;
+
+        setUploading(true);
+        try {
+            const subCompanyId = localStorage.getItem('subCompanyId') || null;
+            await dispatch(deleteProfilePicture(userData.userId, subCompanyId));
+            
+            // Update local state immediately
+            setUserData(prev => ({ ...prev, profilePic: null }));
+            setDeleteDialogOpen(false);
+            
+            setSnackbar({
+                open: true,
+                message: 'Profile picture removed successfully',
+                severity: 'success'
+            });
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to remove profile picture',
+                severity: 'error'
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // Open delete confirmation dialog
+    const openDeleteDialog = () => {
+        setDeleteDialogOpen(true);
+    };
+
+    // Close delete confirmation dialog
+    const closeDeleteDialog = () => {
+        setDeleteDialogOpen(false);
     };
 
     // Handle password update
@@ -327,7 +374,7 @@ const UserProfileComponent = () => {
             return;
         }
 
-        // Simulate API call for password update
+        // Simulate API call for password update (you should implement this)
         console.log('Updating password:', passwordData);
         setSnackbar({
             open: true,
@@ -591,7 +638,13 @@ const UserProfileComponent = () => {
                                         <Avatar
                                             src={profilePicPreview || userData.profilePic}
                                             className="mx-auto mb-3"
-                                            style={{ width: 150, height: 150, border: '3px solid #e0e0e0' }}
+                                            style={{ 
+                                                width: 150, 
+                                                height: 150, 
+                                                border: '3px solid #e0e0e0',
+                                                cursor: userData.profilePic ? 'pointer' : 'default'
+                                            }}
+                                            onClick={() => userData.profilePic && window.open(userData.profilePic, '_blank')}
                                         >
                                             {!profilePicPreview && !userData.profilePic && (
                                                 <PersonIcon style={{ fontSize: 80 }} />
@@ -606,16 +659,30 @@ const UserProfileComponent = () => {
                                             style={{ display: 'none' }}
                                         />
 
-                                        <div className="d-flex justify-content-center gap-2">
+                                        <div className="d-flex justify-content-center gap-2 flex-wrap">
                                             <Button
                                                 variant="contained"
                                                 color="primary"
                                                 startIcon={<CloudUploadIcon />}
                                                 onClick={triggerFileInput}
                                                 className="mb-2"
+                                                disabled={uploading}
                                             >
-                                                Choose Image
+                                                {uploading ? <CircularProgress size={20} /> : 'Choose Image'}
                                             </Button>
+
+                                            {userData.profilePic && !profilePicPreview && (
+                                                <Button
+                                                    variant="outlined"
+                                                    color="error"
+                                                    startIcon={<DeleteIcon />}
+                                                    onClick={openDeleteDialog}
+                                                    className="mb-2"
+                                                    disabled={uploading}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            )}
 
                                             {profilePicPreview && (
                                                 <>
@@ -625,8 +692,9 @@ const UserProfileComponent = () => {
                                                         startIcon={<CheckCircleIcon />}
                                                         onClick={saveProfilePic}
                                                         className="mb-2"
+                                                        disabled={uploading}
                                                     >
-                                                        Save
+                                                        {uploading ? <CircularProgress size={20} /> : 'Save'}
                                                     </Button>
                                                     <Button
                                                         variant="outlined"
@@ -634,6 +702,7 @@ const UserProfileComponent = () => {
                                                         startIcon={<CancelIcon />}
                                                         onClick={cancelProfilePicChange}
                                                         className="mb-2"
+                                                        disabled={uploading}
                                                     >
                                                         Cancel
                                                     </Button>
@@ -641,7 +710,7 @@ const UserProfileComponent = () => {
                                             )}
                                         </div>
 
-                                        <Typography variant="caption" color="textSecondary" display="block">
+                                        <Typography variant="caption" color="textSecondary" display="block" className="mt-2">
                                             Supported formats: JPG, PNG, GIF • Max size: 5MB
                                         </Typography>
                                     </div>
@@ -802,6 +871,31 @@ const UserProfileComponent = () => {
                 </div>
             </div>
 
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={closeDeleteDialog}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    {"Delete Profile Picture?"}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Are you sure you want to remove your profile picture? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeDeleteDialog} color="primary" disabled={uploading}>
+                        Cancel
+                    </Button>
+                    <Button onClick={handleDeleteProfilePicture} color="error" autoFocus disabled={uploading}>
+                        {uploading ? <CircularProgress size={20} /> : 'Delete'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Snackbar
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
                 open={snackbar.open}
@@ -822,6 +916,6 @@ const UserProfileComponent = () => {
             />
         </div>
     );
-};
+}; 
 
 export default UserProfileComponent;
