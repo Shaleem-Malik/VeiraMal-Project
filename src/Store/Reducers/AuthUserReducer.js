@@ -16,7 +16,11 @@ import {
 
     FORGOT_PASSWORD,
     FORGOT_PASSWORD_SUCCESS,
-    FORGOT_PASSWORD_FAILURE
+    FORGOT_PASSWORD_FAILURE,
+
+    CHANGE_PASSWORD,
+    CHANGE_PASSWORD_SUCCESS,
+    CHANGE_PASSWORD_FAILURE
 } from 'Store/Actions/types';
 
 /**
@@ -24,7 +28,10 @@ import {
  */
 const INIT_STATE = {
     user: localStorage.getItem('user_id'),
-    loading: false
+    loading: false,
+    changePasswordLoading: false,
+    changePasswordSuccess: false,
+    changePasswordError: null
 };
 
 let authUser = (state = INIT_STATE, action) => {
@@ -70,6 +77,30 @@ let authUser = (state = INIT_STATE, action) => {
 
         case FORGOT_PASSWORD_FAILURE:
             return { ...state, loading: true };
+
+        case CHANGE_PASSWORD:
+            return { 
+                ...state, 
+                changePasswordLoading: true,
+                changePasswordSuccess: false,
+                changePasswordError: null
+            };
+
+        case CHANGE_PASSWORD_SUCCESS:
+            return { 
+                ...state, 
+                changePasswordLoading: false,
+                changePasswordSuccess: true,
+                changePasswordError: null
+            };
+
+        case CHANGE_PASSWORD_FAILURE:
+            return { 
+                ...state, 
+                changePasswordLoading: false,
+                changePasswordSuccess: false,
+                changePasswordError: action.payload
+            };
 
         default: return { ...state };
     }

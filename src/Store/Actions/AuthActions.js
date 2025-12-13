@@ -8,21 +8,25 @@ import api from 'Api';
 import { loadStripe } from '@stripe/stripe-js';
 import { NotificationManager } from 'react-notifications';
 import {
-   LOGIN_USER,
-   LOGIN_USER_SUCCESS,
-   LOGIN_USER_FAILURE,
-   LOGOUT_USER,
-   SIGNUP_USER,
-   SIGNUP_USER_SUCCESS,
-   SIGNUP_USER_FAILURE,
-   // new types for reset
-   RESET_PASSWORD,
-   RESET_PASSWORD_SUCCESS,
-   RESET_PASSWORD_FAILURE,
+  LOGIN_USER,
+  LOGIN_USER_SUCCESS,
+  LOGIN_USER_FAILURE,
+  LOGOUT_USER,
+  SIGNUP_USER,
+  SIGNUP_USER_SUCCESS,
+  SIGNUP_USER_FAILURE,
+  // new types for reset
+  RESET_PASSWORD,
+  RESET_PASSWORD_SUCCESS,
+  RESET_PASSWORD_FAILURE,
 
-   FORGOT_PASSWORD,
-   FORGOT_PASSWORD_SUCCESS,
-   FORGOT_PASSWORD_FAILURE
+  FORGOT_PASSWORD,
+  FORGOT_PASSWORD_SUCCESS,
+  FORGOT_PASSWORD_FAILURE,
+
+  CHANGE_PASSWORD,
+  CHANGE_PASSWORD_SUCCESS,
+  CHANGE_PASSWORD_FAILURE
 } from 'Store/Actions/types';
 
 /**
@@ -206,9 +210,9 @@ export const signinUserInFirebase = (user, history) => async (dispatch) => {
     dispatch({ type: LOGIN_USER_FAILURE });
 
     const serverMessage = error?.response?.data?.message ??
-                          error?.response?.data?.Message ??
-                          error?.message ??
-                          'Login failed';
+      error?.response?.data?.Message ??
+      error?.message ??
+      'Login failed';
     NotificationManager.error(serverMessage);
   }
 };
@@ -266,40 +270,139 @@ const routeBasedOnAccess = (access, history, isFirstLogin = false) => {
  * history: react-router history object (for redirect)
  */
 export const resetPassword = (newPassword, history) => async (dispatch) => {
-   dispatch({ type: RESET_PASSWORD });
+  dispatch({ type: RESET_PASSWORD });
 
-   const token = localStorage.getItem('token');
-   if (!token) {
-      dispatch({ type: RESET_PASSWORD_FAILURE });
-      NotificationManager.error('Authentication token missing. Please sign in again.');
-      history.push('/signin');
-      return;
-   }
+  const token = localStorage.getItem('token');
+  if (!token) {
+    dispatch({ type: RESET_PASSWORD_FAILURE });
+    NotificationManager.error('Authentication token missing. Please sign in again.');
+    history.push('/signin');
+    return;
+  }
 
-   try {
-      // call backend reset endpoint; include Authorization header explicitly
-      await api.post('Auth/reset-password', { newPassword }, {
-         headers: { Authorization: `Bearer ${token}` }
-      });
+  try {
+    // call backend reset endpoint; include Authorization header explicitly
+    await api.post('Auth/reset-password', { newPassword }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-      dispatch({ type: RESET_PASSWORD_SUCCESS });
-      NotificationManager.success('Password updated successfully. Please sign in with your new password.');
+    dispatch({ type: RESET_PASSWORD_SUCCESS });
+    NotificationManager.success('Password updated successfully. Please sign in with your new password.');
 
-      // Remove auth token & user info
-      localStorage.removeItem('token');
-      localStorage.removeItem('access');
-      localStorage.removeItem('user_email');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('companyId');
+    // Remove auth token & user info
+    localStorage.removeItem('token');
+    localStorage.removeItem('access');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('companyId');
 
-      history.push('/signin');
-   } catch (err) {
-      console.error('Reset password error:', err);
-      dispatch({ type: RESET_PASSWORD_FAILURE });
+    history.push('/signin');
+  } catch (err) {
+    console.error('Reset password error:', err);
+    dispatch({ type: RESET_PASSWORD_FAILURE });
 
-      const msg = err?.response?.data?.message || err?.response?.data?.Message || err?.response?.data || err.message || 'Password reset failed.';
-      NotificationManager.error(msg);
-   }
+    const msg = err?.response?.data?.message || err?.response?.data?.Message || err?.response?.data || err.message || 'Password reset failed.';
+    NotificationManager.error(msg);
+  }
+};
+
+/**
+ * Change Password action
+ * currentPassword: string
+ * newPassword: string
+ */
+export const changePassword = (currentPassword, newPassword) => async (dispatch) => {
+  dispatch({ type: CHANGE_PASSWORD });
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    dispatch({
+      type: CHANGE_PASSWORD_FAILURE,
+      payload: 'Authentication token missing. Please sign in again.'
+    });
+    NotificationManager.error('Authentication token missing. Please sign in again.');
+    return;
+  }
+
+  // Trim the passwords
+  const trimmedCurrentPassword = currentPassword.trim();
+  const trimmedNewPassword = newPassword.trim();
+
+  // Validate inputs
+  if (!trimmedCurrentPassword || !trimmedNewPassword) {
+    dispatch({
+      type: CHANGE_PASSWORD_FAILURE,
+      payload: 'Current password and new password are required.'
+    });
+    NotificationManager.error('Current password and new password are required.');
+    return;
+  }
+
+  if (trimmedCurrentPassword === trimmedNewPassword) {
+    dispatch({
+      type: CHANGE_PASSWORD_FAILURE,
+      payload: 'New password must be different from current password.'
+    });
+    NotificationManager.error('New password must be different from current password.');
+    return;
+  }
+
+  try {
+    // Call backend change password endpoint
+    const response = await api.post('Auth/change-password', {
+      currentPassword: trimmedCurrentPassword,
+      newPassword: trimmedNewPassword
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    dispatch({ type: CHANGE_PASSWORD_SUCCESS });
+    NotificationManager.success('Password changed successfully!');
+
+    return { success: true, message: 'Password changed successfully!' };
+  } catch (error) {
+    console.error('Change password error:', error);
+
+    let errorMessage = 'Failed to change password. Please try again.';
+
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      const serverMessage = error.response.data?.message ||
+        error.response.data?.Message ||
+        error.response.data ||
+        error.response.statusText;
+
+      errorMessage = serverMessage || errorMessage;
+
+      // Handle specific status codes
+      if (error.response.status === 401) {
+        errorMessage = 'Session expired. Please sign in again.';
+        // Optionally redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('access');
+        window.location.href = '/signin';
+      } else if (error.response.status === 400) {
+        // Bad request - validation errors from backend
+        errorMessage = serverMessage;
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      errorMessage = 'No response from server. Please check your connection.';
+    }
+
+    dispatch({
+      type: CHANGE_PASSWORD_FAILURE,
+      payload: errorMessage
+    });
+    NotificationManager.error(errorMessage);
+
+    return { success: false, message: errorMessage };
+  }
 };
 
 /**
@@ -629,66 +732,66 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
  * Redux Action To Signin User In Firebase With Facebook
  */
 export const signinUserWithFacebook = (history) => (dispatch) => {
-   dispatch({ type: LOGIN_USER });
-   const provider = new firebase.auth.FacebookAuthProvider();
-   firebase.auth().signInWithPopup(provider).then(function (result) {
-      localStorage.setItem("user_id", "user-id");
-      dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
-      history.push('/');
-      NotificationManager.success(`Hi ${result.user.displayName}!`);
-   }).catch(function (error) {
-      dispatch({ type: LOGIN_USER_FAILURE });
-      NotificationManager.error(error.message);
-   });
+  dispatch({ type: LOGIN_USER });
+  const provider = new firebase.auth.FacebookAuthProvider();
+  firebase.auth().signInWithPopup(provider).then(function (result) {
+    localStorage.setItem("user_id", "user-id");
+    dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
+    history.push('/');
+    NotificationManager.success(`Hi ${result.user.displayName}!`);
+  }).catch(function (error) {
+    dispatch({ type: LOGIN_USER_FAILURE });
+    NotificationManager.error(error.message);
+  });
 }
 
 /**
  * Redux Action To Signin User In Firebase With Google
  */
 export const signinUserWithGoogle = (history) => (dispatch) => {
-   dispatch({ type: LOGIN_USER });
-   const provider = new firebase.auth.GoogleAuthProvider();
-   firebase.auth().signInWithPopup(provider).then(function (result) {
-      localStorage.setItem("user_id", "user-id");
-      dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
-      history.push('/');
-      NotificationManager.success(`Hi ${result.user.displayName}!`);
-   }).catch(function (error) {
-      dispatch({ type: LOGIN_USER_FAILURE });
-      NotificationManager.error(error.message);
-   });
+  dispatch({ type: LOGIN_USER });
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).then(function (result) {
+    localStorage.setItem("user_id", "user-id");
+    dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
+    history.push('/');
+    NotificationManager.success(`Hi ${result.user.displayName}!`);
+  }).catch(function (error) {
+    dispatch({ type: LOGIN_USER_FAILURE });
+    NotificationManager.error(error.message);
+  });
 }
 
 /**
  * Redux Action To Signin User In Firebase With Github
  */
 export const signinUserWithGithub = (history) => (dispatch) => {
-   dispatch({ type: LOGIN_USER });
-   const provider = new firebase.auth.GithubAuthProvider();
-   firebase.auth().signInWithPopup(provider).then(function (result) {
-      localStorage.setItem("user_id", "user-id");
-      dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
-      history.push('/');
-      NotificationManager.success(`Hi ${result.user.displayName}!`);
-   }).catch(function (error) {
-      dispatch({ type: LOGIN_USER_FAILURE });
-      NotificationManager.error(error.message);
-   });
+  dispatch({ type: LOGIN_USER });
+  const provider = new firebase.auth.GithubAuthProvider();
+  firebase.auth().signInWithPopup(provider).then(function (result) {
+    localStorage.setItem("user_id", "user-id");
+    dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
+    history.push('/');
+    NotificationManager.success(`Hi ${result.user.displayName}!`);
+  }).catch(function (error) {
+    dispatch({ type: LOGIN_USER_FAILURE });
+    NotificationManager.error(error.message);
+  });
 }
 
 /**
  * Redux Action To Signin User In Firebase With Twitter
  */
 export const signinUserWithTwitter = (history) => (dispatch) => {
-   dispatch({ type: LOGIN_USER });
-   const provider = new firebase.auth.TwitterAuthProvider();
-   firebase.auth().signInWithPopup(provider).then(function (result) {
-      localStorage.setItem("user_id", "user-id");
-      dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
-      history.push('/');
-      NotificationManager.success('User Login Successfully!');
-   }).catch(function (error) {
-      dispatch({ type: LOGIN_USER_FAILURE });
-      NotificationManager.error(error.message);
-   });
+  dispatch({ type: LOGIN_USER });
+  const provider = new firebase.auth.TwitterAuthProvider();
+  firebase.auth().signInWithPopup(provider).then(function (result) {
+    localStorage.setItem("user_id", "user-id");
+    dispatch({ type: LOGIN_USER_SUCCESS, payload: localStorage.getItem('user_id') });
+    history.push('/');
+    NotificationManager.success('User Login Successfully!');
+  }).catch(function (error) {
+    dispatch({ type: LOGIN_USER_FAILURE });
+    NotificationManager.error(error.message);
+  });
 }

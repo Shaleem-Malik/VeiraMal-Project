@@ -45,7 +45,13 @@ import {
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Import the actions including new ones
-import { fetchUsers, uploadProfilePicture, deleteProfilePicture } from 'Store/Actions/userActions';
+import { 
+    fetchUsers, 
+    uploadProfilePicture, 
+    deleteProfilePicture 
+} from 'Store/Actions/userActions';
+// Import the changePassword action
+import { changePassword } from 'Store/Actions/AuthActions';
 
 // Helper function to normalize metadata label
 function normalizeMetaLabel(item) {
@@ -56,6 +62,9 @@ function normalizeMetaLabel(item) {
 
 const UserProfileComponent = () => {
     const dispatch = useDispatch();
+    
+    // Get auth state from Redux store for change password
+    const authState = useSelector(state => state.authUser);
     
     // Get user data from Redux store
     const userState = useSelector(state => state.user);
@@ -177,6 +186,19 @@ const UserProfileComponent = () => {
         }
     }, [userState, companyState, BASE_URL]);
 
+    // Reset password form on successful change
+    useEffect(() => {
+        if (authState.changePasswordSuccess) {
+            setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmNewPassword: ''
+            });
+            setPasswordStrength(0);
+            setValidationErrors({});
+        }
+    }, [authState.changePasswordSuccess]);
+
     // Password validation rules
     const passwordRules = {
         minLength: { test: (pwd) => pwd.length >= 8, message: 'At least 8 characters' },
@@ -227,7 +249,7 @@ const UserProfileComponent = () => {
             if (file.size > 5 * 1024 * 1024) { // 5MB limit
                 setSnackbar({
                     open: true,
-                    message: 'File size should be less than 5MB',
+                    message: 'File size should be less than 2MB',
                     severity: 'error'
                 });
                 return;
@@ -344,17 +366,17 @@ const UserProfileComponent = () => {
     };
 
     // Handle password update
-    const handlePasswordUpdate = (e) => {
+    const handlePasswordUpdate = async (e) => {
         e.preventDefault();
 
         // Validation
         const errors = {};
 
-        if (!passwordData.currentPassword) {
+        if (!passwordData.currentPassword.trim()) {
             errors.currentPassword = 'Current password is required';
         }
 
-        if (!passwordData.newPassword) {
+        if (!passwordData.newPassword.trim()) {
             errors.newPassword = 'New password is required';
         }
 
@@ -374,22 +396,16 @@ const UserProfileComponent = () => {
             return;
         }
 
-        // Simulate API call for password update (you should implement this)
-        console.log('Updating password:', passwordData);
-        setSnackbar({
-            open: true,
-            message: 'Password updated successfully!',
-            severity: 'success'
-        });
-
-        // Reset form
-        setPasswordData({
-            currentPassword: '',
-            newPassword: '',
-            confirmNewPassword: ''
-        });
-        setPasswordStrength(0);
+        // Clear previous errors
         setValidationErrors({});
+
+        // Call the Redux action
+        const result = await dispatch(changePassword(passwordData.currentPassword, passwordData.newPassword));
+        
+        if (result && result.success) {
+            // The notification is already shown by the action
+            // Form will be reset by useEffect when changePasswordSuccess is true
+        }
     };
 
     // Close snackbar
@@ -412,6 +428,18 @@ const UserProfileComponent = () => {
     // Check if password meets all requirements
     const isPasswordValid = () => {
         return Object.values(passwordRules).every(rule => rule.test(passwordData.newPassword));
+    };
+
+    // Check if form can be submitted
+    const canSubmitPasswordChange = () => {
+        return (
+            passwordData.currentPassword.trim() &&
+            passwordData.newPassword.trim() &&
+            passwordData.confirmNewPassword.trim() &&
+            isPasswordValid() &&
+            passwordData.newPassword === passwordData.confirmNewPassword &&
+            !authState.changePasswordLoading
+        );
     };
 
     // Show loading state
@@ -711,7 +739,7 @@ const UserProfileComponent = () => {
                                         </div>
 
                                         <Typography variant="caption" color="textSecondary" display="block" className="mt-2">
-                                            Supported formats: JPG, PNG, GIF • Max size: 5MB
+                                            Supported formats: JPG, PNG, GIF • Max size: 2MB
                                         </Typography>
                                     </div>
                                 </CardContent>
@@ -731,7 +759,12 @@ const UserProfileComponent = () => {
 
                                     <form onSubmit={handlePasswordUpdate}>
                                         {/* Current Password */}
-                                        <FormControl fullWidth variant="outlined" className="mb-3" error={!!validationErrors.currentPassword}>
+                                        <FormControl 
+                                            fullWidth 
+                                            variant="outlined" 
+                                            className="mb-3" 
+                                            error={!!validationErrors.currentPassword}
+                                        >
                                             <InputLabel htmlFor="current-password">Current Password</InputLabel>
                                             <OutlinedInput
                                                 id="current-password"
@@ -819,7 +852,12 @@ const UserProfileComponent = () => {
                                         </FormControl>
 
                                         {/* Confirm New Password */}
-                                        <FormControl fullWidth variant="outlined" className="mb-4" error={!!validationErrors.confirmNewPassword}>
+                                        <FormControl 
+                                            fullWidth 
+                                            variant="outlined" 
+                                            className="mb-4" 
+                                            error={!!validationErrors.confirmNewPassword}
+                                        >
                                             <InputLabel htmlFor="confirm-password">Confirm New Password</InputLabel>
                                             <OutlinedInput
                                                 id="confirm-password"
@@ -859,9 +897,13 @@ const UserProfileComponent = () => {
                                             color="primary"
                                             fullWidth
                                             size="large"
-                                            disabled={!isPasswordValid() || passwordData.newPassword !== passwordData.confirmNewPassword}
+                                            disabled={!canSubmitPasswordChange()}
                                         >
-                                            Update Password
+                                            {authState.changePasswordLoading ? (
+                                                <CircularProgress size={24} color="inherit" />
+                                            ) : (
+                                                'Update Password'
+                                            )}
                                         </Button>
                                     </form>
                                 </CardContent>
