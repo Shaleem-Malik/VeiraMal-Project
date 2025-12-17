@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   AppBar, Toolbar, Button, LinearProgress, Grid, Card, CardContent,
   CardActions, Typography, Box, Paper, IconButton, Chip, TextField, Collapse,
-  Fade, Grow
+  Fade, Grow, FormHelperText
 } from '@material-ui/core';
 import { ArrowBack, CheckCircle } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
@@ -24,15 +24,61 @@ import {
 const LS_KEY_PLAN = 'veiramal_selected_plan';
 const LS_KEY_SEATS = 'veiramal_additional_seats';
 
+// Validation functions
+const validateABN = (abn) => {
+  if (!abn) return { isValid: true, message: '' }; // Optional
+  const cleaned = abn.replace(/\s/g, '');
+  if (cleaned.length !== 11) {
+    return { isValid: false, message: 'ABN must be exactly 11 digits' };
+  }
+  if (!/^\d+$/.test(cleaned)) {
+    return { isValid: false, message: 'ABN must contain only numbers' };
+  }
+  return { isValid: true, message: '' };
+};
+
+const validatePhone = (phone, fieldName) => {
+  if (!phone) return { isValid: true, message: '' }; // Optional
+  const cleaned = phone.replace(/\s/g, '');
+  if (cleaned.length !== 10) {
+    return { isValid: false, message: `${fieldName} must be exactly 10 digits` };
+  }
+  if (!/^\d+$/.test(cleaned)) {
+    return { isValid: false, message: `${fieldName} must contain only numbers` };
+  }
+  // Optional: Australian phone number validation (starts with 04 for mobiles or 02, 03, 07, 08 for landlines)
+  if (!/^0[23478]\d{8}$/.test(cleaned)) {
+    return { isValid: false, message: `${fieldName} must be a valid Australian number` };
+  }
+  return { isValid: true, message: '' };
+};
+
+const validateEmail = (email) => {
+  if (!email) {
+    return { isValid: false, message: 'Email is required' };
+  }
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return { isValid: false, message: 'Please enter a valid email address' };
+  }
+  return { isValid: true, message: '' };
+};
+
+const validateRequired = (value, fieldName) => {
+  if (!value || value.trim() === '') {
+    return { isValid: false, message: `${fieldName} is required` };
+  }
+  return { isValid: true, message: '' };
+};
+
 const useStyles = makeStyles((theme) => ({
-  // root: prevent any horizontal overflow at page level
   root: { 
     minHeight: '100vh', 
     display: 'flex',
     flexDirection: 'column',
     background: 'linear-gradient(180deg, #f6f9ff 0%, #ffffff 60%)', 
     paddingBottom: theme.spacing(6),
-    overflowX: 'hidden'       // <--- prevents horizontal scroll
+    overflowX: 'hidden'
   },
   header: { 
     background: 'transparent', 
@@ -43,22 +89,18 @@ const useStyles = makeStyles((theme) => ({
   logo: { 
     display: 'flex', 
     alignItems: 'center',
-    // ensure logo cannot overflow its container
     '& img': { maxWidth: '100%', height: 'auto', display: 'block' }
   },
-
-  // mainContainer becomes the scrollable area (vertical only)
   mainContainer: { 
     marginTop: theme.spacing(6),
     flex: 1,
     overflowY: 'auto',
-    overflowX: 'hidden',     // <--- ensure no horizontal scroll here either
+    overflowX: 'hidden',
     maxHeight: 'calc(100vh - 140px)',
     paddingBottom: theme.spacing(4),
-    width: '100%',           // keep it within viewport width
-    boxSizing: 'border-box'  // safer sizing behavior
+    width: '100%',
+    boxSizing: 'border-box'
   },
-
   hero: { padding: theme.spacing(4), marginBottom: theme.spacing(3), borderRadius: 16, background: 'linear-gradient(135deg,#ffffff,#f8fbff)', boxShadow: '0 6px 30px rgba(20,40,80,0.08)' },
   plansGrid: { marginTop: theme.spacing(2) },
   planCard: { borderRadius: 12, height: '100%', transition: 'transform 300ms, box-shadow 300ms', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 12px 30px rgba(15,30,80,0.12)' } },
@@ -69,17 +111,28 @@ const useStyles = makeStyles((theme) => ({
   smallMuted: { color: '#6b7280' },
   ctaRow: { marginTop: theme.spacing(3) },
   socialRow: { marginTop: theme.spacing(2) },
-  backBtn: { marginBottom: theme.spacing(2) }
+  backBtn: { marginBottom: theme.spacing(2) },
+  errorText: {
+    color: theme.palette.error.main,
+    fontSize: '0.75rem',
+    marginTop: theme.spacing(0.5),
+    marginLeft: theme.spacing(1)
+  },
+  fieldError: {
+    '& .MuiOutlinedInput-root': {
+      '&.Mui-error fieldset': {
+        borderColor: theme.palette.error.main,
+      }
+    }
+  }
 }));
-
-
 
 export default function SignupFirebase(props) {
   const classes = useStyles();
   const dispatch = useDispatch();
-  const loading = useSelector(state => state.loading); // optional app-level loading
+  const loading = useSelector(state => state.loading);
 
-  // superuser + company fields
+  // Form fields
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -91,7 +144,17 @@ export default function SignupFirebase(props) {
   const [companyLocation, setCompanyLocation] = useState('');
   const [superUserLocation, setSuperUserLocation] = useState('');
 
-  // plans & selection
+  // Validation errors
+  const [errors, setErrors] = useState({
+    email: '',
+    firstName: '',
+    companyName: '',
+    companyABN: '',
+    companyContactNumber: '',
+    superUserContactNumber: ''
+  });
+
+  // Plans & selection
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -99,6 +162,70 @@ export default function SignupFirebase(props) {
 
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [touched, setTouched] = useState({});
+
+  // Handle field blur (touch)
+  const handleBlur = (fieldName) => (e) => {
+    setTouched(prev => ({ ...prev, [fieldName]: true }));
+    validateField(fieldName, e.target.value);
+  };
+
+  // Validate individual field
+  const validateField = (fieldName, value) => {
+    let validation = { isValid: true, message: '' };
+    
+    switch (fieldName) {
+      case 'email':
+        validation = validateEmail(value);
+        break;
+      case 'firstName':
+        validation = validateRequired(value, 'First name');
+        break;
+      case 'companyName':
+        validation = validateRequired(value, 'Company name');
+        break;
+      case 'companyABN':
+        validation = validateABN(value);
+        break;
+      case 'companyContactNumber':
+        validation = validatePhone(value, 'Company contact number');
+        break;
+      case 'superUserContactNumber':
+        validation = validatePhone(value, 'Superuser contact number');
+        break;
+      default:
+        break;
+    }
+    
+    setErrors(prev => ({ ...prev, [fieldName]: validation.message }));
+    return validation.isValid;
+  };
+
+  // Validate all required fields
+  const validateForm = () => {
+    const newErrors = {
+      email: validateEmail(email).message,
+      firstName: validateRequired(firstName, 'First name').message,
+      companyName: validateRequired(companyName, 'Company name').message,
+      companyABN: validateABN(companyABN).message,
+      companyContactNumber: validatePhone(companyContactNumber, 'Company contact number').message,
+      superUserContactNumber: validatePhone(superUserContactNumber, 'Superuser contact number').message
+    };
+
+    setErrors(newErrors);
+    
+    // Mark all fields as touched for error display
+    setTouched({
+      email: true,
+      firstName: true,
+      companyName: true,
+      companyABN: true,
+      companyContactNumber: true,
+      superUserContactNumber: true
+    });
+
+    return !Object.values(newErrors).some(error => error !== '');
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -180,8 +307,10 @@ export default function SignupFirebase(props) {
       NotificationManager.error('Please select a plan.');
       return;
     }
-    if (!email.trim() || !firstName.trim() || !companyName.trim()) {
-      NotificationManager.error('Please fill required fields: Email, First name and Company name.');
+    
+    // Validate form
+    if (!validateForm()) {
+      NotificationManager.error('Please fix the validation errors before submitting.');
       return;
     }
 
@@ -232,6 +361,55 @@ export default function SignupFirebase(props) {
       // A helpful notification will have already been shown by the action in most failure cases
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Handle field changes with validation
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (touched.email) {
+      validateField('email', value);
+    }
+  };
+
+  const handleCompanyABNChange = (e) => {
+    const value = e.target.value.replace(/\s/g, '').slice(0, 11);
+    setCompanyABN(value);
+    if (touched.companyABN) {
+      validateField('companyABN', value);
+    }
+  };
+
+  const handleCompanyPhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setCompanyContactNumber(value);
+    if (touched.companyContactNumber) {
+      validateField('companyContactNumber', value);
+    }
+  };
+
+  const handleSuperUserPhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setSuperUserContactNumber(value);
+    if (touched.superUserContactNumber) {
+      validateField('superUserContactNumber', value);
+    }
+  };
+
+  const handleFirstNameChange = (e) => {
+    const value = e.target.value;
+    setFirstName(value);
+    if (touched.firstName) {
+      validateField('firstName', value);
+    }
+  };
+
+  const handleCompanyNameChange = (e) => {
+    const value = e.target.value;
+    setCompanyName(value);
+    if (touched.companyName) {
+      validateField('companyName', value);
     }
   };
 
@@ -340,62 +518,192 @@ export default function SignupFirebase(props) {
 
                       <Box mt={2}>
                         <Grid container spacing={2}>
+                          {/* Email Field */}
                           <Grid item xs={12} sm={6}>
-                            <TextField label="Email" variant="outlined" fullWidth value={email} onChange={(e) => setEmail(e.target.value)} required />
+                            <TextField 
+                              label="Email" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={email} 
+                              onChange={handleEmailChange}
+                              onBlur={handleBlur('email')}
+                              error={touched.email && !!errors.email}
+                              className={classes.fieldError}
+                              required 
+                            />
+                            {touched.email && errors.email && (
+                              <FormHelperText error className={classes.errorText}>
+                                {errors.email}
+                              </FormHelperText>
+                            )}
                           </Grid>
 
+                          {/* Company Contact Number */}
                           <Grid item xs={12} sm={6}>
-                            <TextField label="Company Contact Number" variant="outlined" fullWidth value={companyContactNumber} onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
-                              if (val.length <= 15) setCompanyContactNumber(val);
-                            }} helperText="Optional. For fallback to superuser contact." />
+                            <TextField 
+                              label="Company Contact Number" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={companyContactNumber} 
+                              onChange={handleCompanyPhoneChange}
+                              onBlur={handleBlur('companyContactNumber')}
+                              error={touched.companyContactNumber && !!errors.companyContactNumber}
+                              className={classes.fieldError}
+                              helperText="Optional. Australian 10-digit number"
+                              inputProps={{ maxLength: 10 }}
+                            />
+                            {touched.companyContactNumber && errors.companyContactNumber && (
+                              <FormHelperText error className={classes.errorText}>
+                                {errors.companyContactNumber}
+                              </FormHelperText>
+                            )}
                           </Grid>
 
+                          {/* First Name */}
                           <Grid item xs={12} sm={4}>
-                            <TextField label="First Name" variant="outlined" fullWidth value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                            <TextField 
+                              label="First Name" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={firstName} 
+                              onChange={handleFirstNameChange}
+                              onBlur={handleBlur('firstName')}
+                              error={touched.firstName && !!errors.firstName}
+                              className={classes.fieldError}
+                              required 
+                            />
+                            {touched.firstName && errors.firstName && (
+                              <FormHelperText error className={classes.errorText}>
+                                {errors.firstName}
+                              </FormHelperText>
+                            )}
                           </Grid>
 
+                          {/* Middle Name (optional) */}
                           <Grid item xs={12} sm={4}>
-                            <TextField label="Middle Name (optional)" variant="outlined" fullWidth value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
+                            <TextField 
+                              label="Middle Name (optional)" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={middleName} 
+                              onChange={(e) => setMiddleName(e.target.value)} 
+                            />
                           </Grid>
 
+                          {/* Last Name */}
                           <Grid item xs={12} sm={4}>
-                            <TextField label="Last Name" variant="outlined" fullWidth value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                            <TextField 
+                              label="Last Name" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={lastName} 
+                              onChange={(e) => setLastName(e.target.value)} 
+                            />
                           </Grid>
 
+                          {/* Superuser Contact Number */}
                           <Grid item xs={12} sm={6}>
-                            <TextField label="Superuser Contact Number (optional)" variant="outlined" fullWidth value={superUserContactNumber} onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
-                              if (val.length <= 15) setSuperUserContactNumber(val);
-                            }} helperText="If empty, company contact number will be used." />
+                            <TextField 
+                              label="Superuser Contact Number (optional)" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={superUserContactNumber} 
+                              onChange={handleSuperUserPhoneChange}
+                              onBlur={handleBlur('superUserContactNumber')}
+                              error={touched.superUserContactNumber && !!errors.superUserContactNumber}
+                              className={classes.fieldError}
+                              helperText="If empty, company contact number will be used. Australian 10-digit number"
+                              inputProps={{ maxLength: 10 }}
+                            />
+                            {touched.superUserContactNumber && errors.superUserContactNumber && (
+                              <FormHelperText error className={classes.errorText}>
+                                {errors.superUserContactNumber}
+                              </FormHelperText>
+                            )}
                           </Grid>
 
+                          {/* Superuser Location (optional) */}
                           <Grid item xs={12} sm={6}>
-                            <TextField label="Superuser Location (optional)" variant="outlined" fullWidth value={superUserLocation} onChange={(e) => setSuperUserLocation(e.target.value)} helperText="If empty, company location will be used." />
+                            <TextField 
+                              label="Superuser Location (optional)" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={superUserLocation} 
+                              onChange={(e) => setSuperUserLocation(e.target.value)} 
+                              helperText="If empty, company location will be used."
+                            />
                           </Grid>
 
+                          {/* Company Name */}
                           <Grid item xs={12}>
-                            <TextField label="Company Name" variant="outlined" fullWidth value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
+                            <TextField 
+                              label="Company Name" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={companyName} 
+                              onChange={handleCompanyNameChange}
+                              onBlur={handleBlur('companyName')}
+                              error={touched.companyName && !!errors.companyName}
+                              className={classes.fieldError}
+                              required 
+                            />
+                            {touched.companyName && errors.companyName && (
+                              <FormHelperText error className={classes.errorText}>
+                                {errors.companyName}
+                              </FormHelperText>
+                            )}
                           </Grid>
 
+                          {/* Company ABN */}
                           <Grid item xs={12} sm={6}>
-                            <TextField label="Company ABN" variant="outlined" fullWidth value={companyABN} onChange={(e) => {
-                              const val = e.target.value;
-                              if (val.length <= 11) setCompanyABN(val);
-                            }} inputProps={{ maxLength: 11 }} helperText="Must be exactly 11 characters if provided" />
+                            <TextField 
+                              label="Company ABN" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={companyABN} 
+                              onChange={handleCompanyABNChange}
+                              onBlur={handleBlur('companyABN')}
+                              error={touched.companyABN && !!errors.companyABN}
+                              className={classes.fieldError}
+                              inputProps={{ maxLength: 11 }}
+                              helperText="Optional. Must be exactly 11 digits if provided"
+                            />
+                            {touched.companyABN && errors.companyABN && (
+                              <FormHelperText error className={classes.errorText}>
+                                {errors.companyABN}
+                              </FormHelperText>
+                            )}
                           </Grid>
 
+                          {/* Company Location */}
                           <Grid item xs={12} sm={6}>
-                            <TextField label="Company Location (address)" variant="outlined" fullWidth value={companyLocation} onChange={(e) => setCompanyLocation(e.target.value)} helperText="Optional address / location of company" />
+                            <TextField 
+                              label="Company Location (address)" 
+                              variant="outlined" 
+                              fullWidth 
+                              value={companyLocation} 
+                              onChange={(e) => setCompanyLocation(e.target.value)} 
+                              helperText="Optional address / location of company" 
+                            />
                           </Grid>
 
+                          {/* Additional Seats */}
                           <Grid item xs={12} sm={6}>
                             {(selectedPlan?.additionalSeatsAllowed || selectedPlan?.AdditionalSeatsAllowed) ? (
-                              <TextField label="Additional user seats (optional)" variant="outlined" fullWidth type="number" inputProps={{ min: 0 }} value={additionalSeatsRequested} onChange={(e) => {
-                                const v = Math.max(0, parseInt(e.target.value || '0', 10) || 0);
-                                setAdditionalSeatsRequested(v);
-                                persistAdditionalSeats(v);
-                              }} helperText={`Base seats: ${selectedPlan?.baseUserSeats ?? selectedPlan?.BaseUserSeats} — Extra @ AUD ${(selectedPlan?.additionalSeatPrice ?? selectedPlan?.AdditionalSeatPrice) || 0}/seat/month`} />
+                              <TextField 
+                                label="Additional user seats (optional)" 
+                                variant="outlined" 
+                                fullWidth 
+                                type="number" 
+                                inputProps={{ min: 0 }} 
+                                value={additionalSeatsRequested} 
+                                onChange={(e) => {
+                                  const v = Math.max(0, parseInt(e.target.value || '0', 10) || 0);
+                                  setAdditionalSeatsRequested(v);
+                                  persistAdditionalSeats(v);
+                                }} 
+                                helperText={`Base seats: ${selectedPlan?.baseUserSeats ?? selectedPlan?.BaseUserSeats} — Extra @ AUD ${(selectedPlan?.additionalSeatPrice ?? selectedPlan?.AdditionalSeatPrice) || 0}/seat/month`} 
+                              />
                             ) : (
                               <Box px={1} py={1} borderRadius={6} bgcolor="#f8fafc"><Typography variant="body2" className={classes.smallMuted}>Additional seats for this plan must be purchased via sales / account manager.</Typography></Box>
                             )}
@@ -403,23 +711,19 @@ export default function SignupFirebase(props) {
 
                           <Grid item xs={12} className={classes.ctaRow}>
                             <Box display="flex" alignItems="center" justifyContent="space-between" gap={8}>
-                              <Button variant="contained" color="primary" size="large" onClick={onUserSignUp} disabled={!selectedPlan || loading || submitting}>
+                              <Button 
+                                variant="contained" 
+                                color="primary" 
+                                size="large" 
+                                onClick={onUserSignUp} 
+                                disabled={!selectedPlan || loading || submitting || Object.values(errors).some(error => error !== '')}
+                              >
                                 {submitting ? 'Creating...' : (selectedPlan?.pricePerMonth ? `Create Company — AUD ${computeMonthlyTotal().toLocaleString()}/mo` : 'Create Company — Contact Sales')}
                               </Button>
 
                               <Button variant="outlined" onClick={clearSavedPlan} disabled={submitting}>Clear saved plan</Button>
                             </Box>
                           </Grid>
-
-                          {/* <Grid item xs={12} className={classes.socialRow}>
-                            <Typography variant="body2" className={classes.smallMuted}>or continue with</Typography>
-                            <Box mt={1} display="flex" gap={8}>
-                              <Fab size="small" onClick={() => dispatch(signinUserWithFacebook(props.history))} className="btn-facebook"><i className="zmdi zmdi-facebook" /></Fab>
-                              <Fab size="small" onClick={() => dispatch(signinUserWithGoogle(props.history))} className="btn-google"><i className="zmdi zmdi-google" /></Fab>
-                              <Fab size="small" onClick={() => dispatch(signinUserWithTwitter(props.history))} className="btn-twitter"><i className="zmdi zmdi-twitter" /></Fab>
-                              <Fab size="small" onClick={() => dispatch(signinUserWithGithub(props.history))} className="btn-instagram"><i className="zmdi zmdi-github-alt" /></Fab>
-                            </Box>
-                          </Grid> */}
 
                           <Grid item xs={12}><Typography variant="caption" className={classes.smallMuted}>By signing up you agree to {AppConfig.brandName} — <Link to="/terms-condition">Terms of Service</Link></Typography></Grid>
                         </Grid>
