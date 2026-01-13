@@ -16,6 +16,8 @@ export default function CheckoutSuccess() {
   const qs = new URLSearchParams(location.search);
   const sessionId = qs.get("session_id");
 
+  const API_BASE_URL = `${process.env.REACT_APP_BASE_URL}`;
+
   // Fetch Stripe session details
   useEffect(() => {
     let mounted = true;
@@ -26,7 +28,7 @@ export default function CheckoutSuccess() {
         return;
       }
       try {
-        const res = await axios.get(`http://localhost:5228/api/stripe/session?sessionId=${encodeURIComponent(sessionId)}`);
+        const res = await axios.get(`${API_BASE_URL}stripe/session?sessionId=${encodeURIComponent(sessionId)}`);
         if (!mounted) return;
         setSession(res.data);
       } catch (err) {
@@ -66,7 +68,7 @@ export default function CheckoutSuccess() {
 
     setResendLoading(true);
     try {
-      await axios.post("http://localhost:5228/api/company/resend-onboarding", {
+      await axios.post(`${API_BASE_URL}company/resend-onboarding`, {
         companyId,
         userId,
         companySubscriptionId
