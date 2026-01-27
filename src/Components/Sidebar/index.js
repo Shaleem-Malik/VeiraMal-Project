@@ -5,8 +5,11 @@ import React, { Component, Fragment } from 'react';
 import classNames from 'classnames';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-// import { Link } from 'react-router-dom';
 import { Scrollbars } from 'react-custom-scrollbars';
+
+// Material-UI components
+import { Button } from '@material-ui/core';
+import { TrendingUp } from '@material-ui/icons';
 
 // redux actions
 import { collapsedSidebarAction } from 'Store/Actions';
@@ -54,6 +57,15 @@ class Sidebar extends Component {
 
 	render() {
 		const { enableSidebarBackgroundImage, selectedSidebarImage, isDarkSidenav, agencySidebar } = this.props;
+		
+		// Function to handle upgrade button click
+		const handleUpgradeClick = () => {
+			// Add your upgrade logic here
+			console.log('Upgrade Plan clicked');
+			// You might want to navigate to a pricing page or show a modal
+			// this.props.history.push('/pricing');
+		};
+
 		return (
 			<Fragment>
 				<div
@@ -62,20 +74,15 @@ class Sidebar extends Component {
 				>
 					<div className={classNames("rct-sidebar-content", { "sidebar-overlay-dark": isDarkSidenav, 'sidebar-overlay-light': !isDarkSidenav })}>
 						<div className="site-logo">
-							{/* <Link to="/" className="logo-mini"> */}
-                        <img src={`${process.env.PUBLIC_URL}/assets/images/img/appLogo.png`} className="mr-15" alt="site logo" width="35" height="35" /> 
-						<h3 className="d-inline-block align-middle mb-0">HR Analytix</h3>
-							{/* </Link> */}
-							{/* <Link to="/" className="logo-normal"> */}
-                        {/* <img src={`${process.env.PUBLIC_URL}/assets/images/img/appLogoText.png`} className="img-fluid" alt="site-logo" width="67" height="17" /> */}
-							{/* </Link> */}
+							<img src={`${process.env.PUBLIC_URL}/assets/images/img/appLogo.png`} className="mr-15" alt="site logo" width="35" height="35" /> 
+							<h3 className="d-inline-block align-middle mb-0">HR Analytix</h3>
 						</div>
 						<div className="rct-sidebar-wrap">
 							<Scrollbars
 								className="rct-scroll"
 								autoHide
 								autoHideDuration={100}
-								style={{ height: 'calc(100vh - 60px)' }}
+								style={{ height: 'calc(100vh - 140px)' }} // Reduced height to accommodate button
 							>
 								<UserBlock />
 								{!agencySidebar ?
@@ -84,6 +91,35 @@ class Sidebar extends Component {
 									<AgencySidebar />
 								}
 							</Scrollbars>
+							
+							{/* Upgrade Plan Button - Fixed at bottom */}
+							<div className="sidebar-footer p-3 border-top">
+								<Button
+									fullWidth
+									variant="contained"
+									color="primary"
+									startIcon={<TrendingUp />}
+									onClick={handleUpgradeClick}
+									className="upgrade-plan-btn"
+									style={{
+										backgroundColor: '#1976d2',
+										color: 'white',
+										borderRadius: '8px',
+										padding: '10px 16px',
+										fontWeight: '600',
+										textTransform: 'none',
+										fontSize: '0.95rem',
+										boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)'
+									}}
+								>
+									Upgrade Plan
+								</Button>
+								
+								{/* Optional: Add a small description */}
+								{/* <div className="text-center mt-2 mb-5" style={{ fontSize: '0.75rem', color: isDarkSidenav ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }}>
+									Get access to premium features
+								</div> */}
+							</div>
 						</div>
 					</div>
 				</div>

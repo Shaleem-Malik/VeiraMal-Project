@@ -47,7 +47,7 @@ function NavMenuItem(props) {
                         <IntlMessages id={subMenu.menu_title} />
                       </span>
                       {subMenu.new_item && subMenu.new_item === true ? (
-                        <Chip label="inProcess" className="new-item" color="secondary" />
+                        <Chip label="new" className="new-item" color="secondary" />
                       ) : (
                         ''
                       )}

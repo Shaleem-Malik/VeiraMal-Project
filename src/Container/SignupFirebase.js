@@ -1,14 +1,15 @@
-// SignupFirebase.jsx
-import React, { useState, useEffect } from 'react';
+// SignupFirebase.jsx - Simplified with working popup
+import React, { useState, useEffect, useRef } from 'react';
 import {
   AppBar, Toolbar, Button, LinearProgress, Grid, Card, CardContent,
   CardActions, Typography, Box, Paper, IconButton, Chip, TextField, Collapse,
-  Fade, Grow, FormHelperText
+  Fade, Grow, FormHelperText, Dialog, DialogTitle, DialogContent, 
+  DialogContentText, DialogActions
 } from '@material-ui/core';
 import { ArrowBack, CheckCircle } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useHistory } from 'react-router-dom';
 import QueueAnim from 'rc-queue-anim';
 import api from 'Api';
 import { NotificationManager } from 'react-notifications';
@@ -26,7 +27,7 @@ const LS_KEY_SEATS = 'veiramal_additional_seats';
 
 // Validation functions
 const validateABN = (abn) => {
-  if (!abn) return { isValid: true, message: '' }; // Optional
+  if (!abn) return { isValid: true, message: '' };
   const cleaned = abn.replace(/\s/g, '');
   if (cleaned.length !== 11) {
     return { isValid: false, message: 'ABN must be exactly 11 digits' };
@@ -38,7 +39,7 @@ const validateABN = (abn) => {
 };
 
 const validatePhone = (phone, fieldName) => {
-  if (!phone) return { isValid: true, message: '' }; // Optional
+  if (!phone) return { isValid: true, message: '' };
   const cleaned = phone.replace(/\s/g, '');
   if (cleaned.length !== 10) {
     return { isValid: false, message: `${fieldName} must be exactly 10 digits` };
@@ -46,7 +47,6 @@ const validatePhone = (phone, fieldName) => {
   if (!/^\d+$/.test(cleaned)) {
     return { isValid: false, message: `${fieldName} must contain only numbers` };
   }
-  // Optional: Australian phone number validation (starts with 04 for mobiles or 02, 03, 07, 08 for landlines)
   if (!/^0[23478]\d{8}$/.test(cleaned)) {
     return { isValid: false, message: `${fieldName} must be a valid Australian number` };
   }
@@ -124,6 +124,10 @@ const useStyles = makeStyles((theme) => ({
         borderColor: theme.palette.error.main,
       }
     }
+  },
+  dialogPaper: {
+    borderRadius: 12,
+    padding: theme.spacing(2)
   }
 }));
 
@@ -131,6 +135,12 @@ export default function SignupFirebase(props) {
   const classes = useStyles();
   const dispatch = useDispatch();
   const loading = useSelector(state => state.loading);
+  const location = useLocation();
+  const history = useHistory();
+  
+  // Track if we've already shown the dialog in this session
+  const hasShownDialog = useRef(false);
+  const dialogDecisionMade = useRef(false);
 
   // Form fields
   const [email, setEmail] = useState('');
@@ -163,6 +173,58 @@ export default function SignupFirebase(props) {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState({});
+
+  // Dialog state
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [dialogLoading, setDialogLoading] = useState(false);
+
+  // Check if user came from signin page on component mount
+  useEffect(() => {
+    // Check if we have a saved plan
+    const savedPlan = localStorage.getItem(LS_KEY_PLAN);
+    const savedSeats = localStorage.getItem(LS_KEY_SEATS);
+    
+    // Check if user came from signin page
+    // Method 1: Check document.referrer
+    const referrer = document.referrer;
+    const fromSignIn = referrer && (
+      referrer.includes('/signin') || 
+      referrer.includes('/login') ||
+      referrer.includes('signin') ||
+      referrer.includes('login')
+    );
+    
+    // Method 2: Check URL params or location state
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromSignInParam = urlParams.get('fromSignIn');
+    
+    // Method 3: Check session storage (set this in signin page)
+    const sessionFromSignIn = sessionStorage.getItem('cameFromSignIn');
+    
+    console.log('Referrer:', referrer);
+    console.log('From signin check:', { fromSignIn, fromSignInParam, sessionFromSignIn });
+    
+    // If user came from signin AND has saved plan AND we haven't shown dialog yet
+    if ((fromSignIn || fromSignInParam || sessionFromSignIn) && 
+        (savedPlan || savedSeats) && 
+        !hasShownDialog.current) {
+      
+      console.log('Showing dialog - conditions met');
+      setOpenConfirmDialog(true);
+      hasShownDialog.current = true;
+      
+      // Clear session flag if it exists
+      sessionStorage.removeItem('cameFromSignIn');
+    } else {
+      // Load plans normally if no dialog needed
+      loadPlans(false); // false = don't show dialog
+    }
+    
+    // Clear the session flag on unmount
+    return () => {
+      sessionStorage.removeItem('cameFromSignIn');
+    };
+  }, []); // Empty dependency array - run only on mount
 
   // Handle field blur (touch)
   const handleBlur = (fieldName) => (e) => {
@@ -214,7 +276,6 @@ export default function SignupFirebase(props) {
 
     setErrors(newErrors);
     
-    // Mark all fields as touched for error display
     setTouched({
       email: true,
       firstName: true,
@@ -227,18 +288,18 @@ export default function SignupFirebase(props) {
     return !Object.values(newErrors).some(error => error !== '');
   };
 
-  useEffect(() => {
-    let mounted = true;
-    async function loadPlans() {
-      setPlansLoading(true);
-      try {
-        const res = await api.get('Subscription/plans');
-        if (!mounted) return;
-        const data = res.data || [];
-        setPlans(data);
+  // Load plans function
+  const loadPlans = async (loadSavedPlan = true) => {
+    setPlansLoading(true);
+    try {
+      const res = await api.get('Subscription/plans');
+      const data = res.data || [];
+      setPlans(data);
 
+      if (loadSavedPlan) {
         const savedPlanJson = localStorage.getItem(LS_KEY_PLAN);
         const savedSeats = localStorage.getItem(LS_KEY_SEATS);
+        
         if (savedPlanJson) {
           try {
             const parsed = JSON.parse(savedPlanJson);
@@ -262,20 +323,74 @@ export default function SignupFirebase(props) {
           const n = parseInt(savedSeats, 10);
           if (!Number.isNaN(n) && n >= 0) setAdditionalSeatsRequested(n);
         }
-      } catch (err) {
-        console.error('Plans load failed', err);
-        NotificationManager.error('Failed to load subscription plans.');
-      } finally {
-        if (mounted) setPlansLoading(false);
       }
+    } catch (err) {
+      console.error('Plans load failed', err);
+      NotificationManager.error('Failed to load subscription plans.');
+    } finally {
+      setPlansLoading(false);
     }
-    loadPlans();
-    return () => { mounted = false; };
-  }, []);
+  };
 
-  const persistSelectedPlan = (plan) => { try { localStorage.setItem(LS_KEY_PLAN, JSON.stringify(plan)); } catch (e) {} };
-  const persistAdditionalSeats = (n) => { try { localStorage.setItem(LS_KEY_SEATS, String(n)); } catch (e) {} };
-  const clearSavedPlan = () => { try { localStorage.removeItem(LS_KEY_PLAN); localStorage.removeItem(LS_KEY_SEATS); setSelectedPlan(null); setAdditionalSeatsRequested(0); setShowForm(false); } catch (e) {} };
+  // Dialog handlers
+  const handleDialogYes = () => {
+    dialogDecisionMade.current = true;
+    setDialogLoading(true);
+    
+    // Clear saved plan
+    clearSavedPlan();
+    
+    // Close dialog
+    setOpenConfirmDialog(false);
+    
+    // Load plans without saved data
+    loadPlans(false);
+    
+    setDialogLoading(false);
+  };
+
+  const handleDialogNo = () => {
+    dialogDecisionMade.current = true;
+    setOpenConfirmDialog(false);
+    
+    // Load plans WITH saved data
+    loadPlans(true);
+  };
+
+  const handleDialogClose = () => {
+    // Default to "No" if user closes dialog
+    if (!dialogDecisionMade.current) {
+      handleDialogNo();
+    }
+  };
+
+  const persistSelectedPlan = (plan) => { 
+    try { 
+      localStorage.setItem(LS_KEY_PLAN, JSON.stringify(plan)); 
+    } catch (e) {
+      console.error('Failed to save plan:', e);
+    } 
+  };
+  
+  const persistAdditionalSeats = (n) => { 
+    try { 
+      localStorage.setItem(LS_KEY_SEATS, String(n)); 
+    } catch (e) {
+      console.error('Failed to save seats:', e);
+    } 
+  };
+  
+  const clearSavedPlan = () => { 
+    try { 
+      localStorage.removeItem(LS_KEY_PLAN); 
+      localStorage.removeItem(LS_KEY_SEATS); 
+      setSelectedPlan(null); 
+      setAdditionalSeatsRequested(0); 
+      setShowForm(false); 
+    } catch (e) {
+      console.error('Failed to clear saved plan:', e);
+    } 
+  };
 
   const extractPlanId = (plan) => {
     if (!plan) return null;
@@ -308,7 +423,6 @@ export default function SignupFirebase(props) {
       return;
     }
     
-    // Validate form
     if (!validateForm()) {
       NotificationManager.error('Please fix the validation errors before submitting.');
       return;
@@ -317,7 +431,6 @@ export default function SignupFirebase(props) {
     const additionalSeats = Math.max(0, parseInt(additionalSeatsRequested || '0', 10) || 0);
     const planId = extractPlanId(selectedPlan);
 
-    // validate plan exists in fetched list
     const planExists = plans.some(p => String(extractPlanId(p)) === String(planId));
     if (!planId || !planExists) {
       NotificationManager.error('Selected plan is invalid. Please re-select a plan from the available options.');
@@ -325,11 +438,9 @@ export default function SignupFirebase(props) {
       return;
     }
 
-    // fallbacks
     const suContact = superUserContactNumber?.trim() ? superUserContactNumber.trim() : (companyContactNumber?.trim() ? companyContactNumber.trim() : null);
     const suLocation = superUserLocation?.trim() ? superUserLocation.trim() : (companyLocation?.trim() ? companyLocation.trim() : null);
 
-    // Build payload matching CompanyOnboardDto (PascalCase)
     const payload = {
       SuperUserEmail: String(email).trim(),
       SuperUserFirstName: String(firstName).trim(),
@@ -347,18 +458,13 @@ export default function SignupFirebase(props) {
 
     setSubmitting(true);
     try {
-      // Build success/cancel/signin URLs to pass to server (server includes sign-in URL in the onboarding email)
       const successUrl = window.location.origin + '/checkout-success';
       const cancelUrl = window.location.origin + '/checkout-cancel';
       const signInUrl = window.location.origin + '/signin';
 
-      // dispatch action which will call backend and redirect to Stripe Checkout
-      await dispatch(signupUserInFirebase(payload, props.history, { successUrl, cancelUrl, signInUrl }));
-
-      // note: signupUserInFirebase handles redirectToCheckout (so this code generally won't continue if redirect occurs)
+      await dispatch(signupUserInFirebase(payload, history, { successUrl, cancelUrl, signInUrl }));
     } catch (err) {
       console.error('Onboard error:', err);
-      // A helpful notification will have already been shown by the action in most failure cases
     } finally {
       setSubmitting(false);
     }
@@ -418,6 +524,47 @@ export default function SignupFirebase(props) {
       <Helmet>
           <title>Signup</title>
       </Helmet>
+      
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={openConfirmDialog}
+        onClose={handleDialogClose}
+        aria-labelledby="clear-plan-dialog-title"
+        aria-describedby="clear-plan-dialog-description"
+        PaperProps={{ className: classes.dialogPaper }}
+        disableEscapeKeyDown={true}
+        disableBackdropClick={true}
+      >
+        <DialogTitle id="clear-plan-dialog-title" style={{ paddingBottom: 8 }}>
+          Clear Saved Plan?
+        </DialogTitle>
+        <DialogContent style={{ paddingBottom: 16 }}>
+          <DialogContentText id="clear-plan-dialog-description">
+            You have a saved plan from a previous session. Would you like to clear it and start fresh with plan selection?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions style={{ padding: '8px 24px 16px' }}>
+          <Button 
+            onClick={handleDialogNo} 
+            color="primary"
+            variant="outlined"
+            style={{ marginRight: 8 }}
+            disabled={dialogLoading}
+          >
+            No, Keep Saved Plan
+          </Button>
+          <Button 
+            onClick={handleDialogYes} 
+            color="primary" 
+            variant="contained"
+            autoFocus
+            disabled={dialogLoading}
+          >
+            {dialogLoading ? 'Processing...' : 'Yes, Clear and Select New Plan'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <div className={classes.root} key="signup-root">
         {(loading || plansLoading) && <LinearProgress />}
 
@@ -431,7 +578,14 @@ export default function SignupFirebase(props) {
               </div>
               <div>
                 <Link to="/signin" style={{ color: '#374151', marginRight: 16, textDecoration: 'none' }}>Already have an account?</Link>
-                <Button component={Link} to="/signin" variant="contained" color="primary">Sign In</Button>
+                <Button 
+                  component={Link} 
+                  to="/signin" 
+                  variant="contained" 
+                  color="primary"
+                >
+                  Sign In
+                </Button>
               </div>
             </div>
           </Toolbar>
@@ -499,7 +653,7 @@ export default function SignupFirebase(props) {
             </Box>
           </Collapse>
 
-          {/* FORM + summary */}
+          {/* FORM + summary - Rest of your form remains the same */}
           <Collapse in={showForm} timeout={600}>
             <Box mt={4}>
               <Grid container spacing={4}>

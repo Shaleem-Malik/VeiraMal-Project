@@ -82,6 +82,7 @@ function Signin(props) {
     * On User Sign Up
     */
    const onUserSignUp = () =>  {
+      sessionStorage.setItem('cameFromSignIn', 'true');
       props.history.push('/signup');
    }
 
