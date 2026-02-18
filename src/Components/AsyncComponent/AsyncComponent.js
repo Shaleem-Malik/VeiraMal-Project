@@ -32,6 +32,11 @@ const AsyncNewsDashboardComponent = Loadable({
 	loading: () => <RctPageLoader />,
 });
 
+const AsyncLiabilityTrackerComponent = Loadable({
+	loader: () => import("Routes/dashboard/news/LiabilityTracker"),
+	loading: () => <RctPageLoader />,
+});
+
 // crm dashboard
 const AsyncCrmComponent = Loadable({
 	loader: () => import("Routes/crm/dashboard"),
@@ -81,5 +86,6 @@ export {
 	AsyncLiveCompanyDetailsComponent,
 	AsynQuickActions,
 	AsynSubCompaniesManagement,
-	AsynUserProfile
+	AsynUserProfile,
+	AsyncLiabilityTrackerComponent
 };
