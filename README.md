@@ -1,5 +1,5 @@
 ## VeiraMal Project
-This is a React-based admin dashboard using the Reactify theme (Redux Thunk variant). It utilizes React, Redux, Material-UI, Bootstrap 4, and Chart.js to create a responsive, customizable admin panel
+This is a React-based admin dashboard using the Reactify theme (Redux Thunk variant). It utilizes React, Redux, Material-UI, Bootstrap 4, and Chart.js to create a responsive, customizable admin panel.
 
 ## 🔧 Tech Stack
 React 18
