@@ -15,7 +15,6 @@ import './Firebase';
 
 // app component
 import App from 'Container/App';
-import IdleMonitor from 'Components/IdleMonitor';
 
 import { configureStore } from 'Store';
 
@@ -24,7 +23,6 @@ function MainApp() {
 		<Provider store={configureStore()}>
 			<MuiPickersUtilsProvider utils={MomentUtils}>
 				<Router basename="/VeiraMal-Project">
-					<IdleMonitor />
 					<Switch>
 						<Route path="/" component={App} />
 					</Switch>
