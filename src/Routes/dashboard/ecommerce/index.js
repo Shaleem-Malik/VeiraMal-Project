@@ -1,4 +1,4 @@
-// File: AdminDashboard.js (updated)
+// File: src/Routes/dashboard/admin/AdminDashboard.js
 import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import PageTitleBar from 'Components/PageTitleBar/PageTitleBar';
@@ -11,6 +11,7 @@ import {
   Box,
 } from "@material-ui/core";
 import { CloudUpload } from "@material-ui/icons";
+import axios from "axios";
 
 // Widgets
 import HeadcountWidget from 'Components/Widgets/HeadcountWidget';
@@ -30,6 +31,9 @@ import {
   fetchHistoryDetail,
   saveAllAnalysisHistory,
 } from "Store/Actions/historyActions";
+
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5228";
+const api = axios.create({ baseURL: API_BASE, withCredentials: true });
 
 export default function EcommerceDashboard({ match }) {
   const [iframeWidget, setIframeWidget] = useState(null);
@@ -185,6 +189,122 @@ export default function EcommerceDashboard({ match }) {
     });
   };
 
+  // --------- Template download modal states & handlers ----------
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  const [templates, setTemplates] = useState([]); // { key, displayName, exists, fileName, updatedAtUtc, ... }
+  const [selectedTemplates, setSelectedTemplates] = useState(new Set());
+  const [downloadingTemplates, setDownloadingTemplates] = useState(false);
+  const [templatesMessage, setTemplatesMessage] = useState(null);
+
+  const openTemplatesModal = async () => {
+    setTemplatesMessage(null);
+    setShowTemplatesModal(true);
+    try {
+      const res = await api.get("/api/admin/samples");
+      setTemplates(res.data || []);
+      setSelectedTemplates(new Set()); // reset selections
+    } catch (err) {
+      console.error("Failed to load templates", err);
+      setTemplatesMessage({ type: "error", text: err?.response?.data?.message || "Failed to load templates." });
+    }
+  };
+
+  const toggleTemplateSelection = (key) => {
+    setSelectedTemplates(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  function getFileNameFromDisposition(disposition) {
+    if (!disposition) return null;
+    // try filename*=UTF-8''encoded form
+    const fnStar = /filename\*\s*=\s*([^;]+)/i.exec(disposition);
+    if (fnStar) {
+      let val = fnStar[1].trim();
+      // may be: UTF-8''encoded_filename
+      const idx = val.indexOf("''");
+      if (idx !== -1) {
+        val = decodeURIComponent(val.substring(idx + 2));
+      }
+      // strip quotes
+      return val.replace(/^"(.*)"$/, "$1");
+    }
+    // try filename="name.ext"
+    const fn = /filename\s*=\s*"?(?<name>[^"]+)"?/i.exec(disposition);
+    if (fn && fn.groups && fn.groups.name) return fn.groups.name;
+    return null;
+  }
+
+  function guessExtensionFromContentType(ct) {
+    if (!ct) return ".dat";
+    if (ct.includes("csv")) return ".csv";
+    if (ct.includes("spreadsheet") || ct.includes("openxmlformats")) return ".xlsx";
+    if (ct.includes("excel")) return ".xls";
+    return ".dat";
+  }
+
+  const downloadSelectedTemplates = async () => {
+    if (selectedTemplates.size === 0) {
+      setTemplatesMessage({ type: "error", text: "Select at least one template to download." });
+      return;
+    }
+
+    setTemplatesMessage(null);
+    setDownloadingTemplates(true);
+
+    // sequential download so that user gesture is used for each download
+    try {
+      for (const key of Array.from(selectedTemplates)) {
+        // call download endpoint as blob
+        const res = await api.get(`/api/admin/samples/${key}/download`, { responseType: 'blob' });
+
+        // determine filename
+        const disposition = res.headers && (res.headers['content-disposition'] || res.headers['Content-Disposition']);
+        let filename = getFileNameFromDisposition(disposition);
+        if (!filename) {
+          // fallback: use server-provided templates info if exists
+          const t = templates.find(x => x.key === key);
+          if (t && t.fileName) filename = t.fileName;
+        }
+        if (!filename) {
+          // last fallback: guess
+          const contentType = (res.headers && (res.headers['content-type'] || res.headers['Content-Type'])) || '';
+          filename = `${key}${guessExtensionFromContentType(contentType)}`;
+        }
+
+        const blob = new Blob([res.data], { type: res.headers['content-type'] || undefined });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+        // small pause to avoid overwhelming browser (optional)
+        await new Promise(r => setTimeout(r, 150));
+      }
+
+      setTemplatesMessage({ type: "success", text: "Selected templates downloaded." });
+      // close modal after a short delay
+      setTimeout(() => {
+        setShowTemplatesModal(false);
+        setTemplatesMessage(null);
+      }, 800);
+    } catch (err) {
+      console.error("Download templates failed", err);
+      setTemplatesMessage({ type: "error", text: err?.response?.data?.message || "Failed to download templates." });
+    } finally {
+      setDownloadingTemplates(false);
+    }
+  };
+
+  // --------------------------------------------------------------
+
   return (
     <div className="ecom-dashboard-wrapper">
       <Helmet>
@@ -253,6 +373,15 @@ export default function EcommerceDashboard({ match }) {
                 )}
               </Button>
             )}
+
+            {/* Download Templates - available to users (visible next to upload) */}
+            <Button
+              variant="outlined"
+              style={{ borderRadius: "10px", fontWeight: 600, height: 40 }}
+              onClick={() => openTemplatesModal()}
+            >
+              Download Template
+            </Button>
           </div>
 
           <div className="controls-right">
@@ -382,6 +511,66 @@ export default function EcommerceDashboard({ match }) {
         onClose={() => setUploadModalOpen(false)} 
       />
 
+      {/* Templates Modal (download) */}
+      {showTemplatesModal && (
+        <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Download Templates</h5>
+                <button type="button" className="btn-close" onClick={() => setShowTemplatesModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p>Select one or more templates to download:</p>
+
+                <div style={{ maxHeight: "42vh", overflowY: "auto" }}>
+                  {templates.length === 0 ? (
+                    <div className="text-muted">No templates available.</div>
+                  ) : (
+                    <ul className="list-unstyled">
+                      {templates.map(t => (
+                        <li key={t.key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTemplates.has(t.key)}
+                            onChange={() => toggleTemplateSelection(t.key)}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600 }}>{t.displayName}</div>
+                            <div style={{ fontSize: 12, color: '#6b7280' }}>
+                              {t.exists ? `${t.fileName || 'file available'} — ${t.updatedAtUtc ? new Date(t.updatedAtUtc).toLocaleString() : ''}` : 'No file uploaded'}
+                            </div>
+                          </div>
+                          <div>
+                            {t.exists && (
+                              <a href={`${API_BASE}/api/admin/samples/${t.key}/download`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-secondary" style={{ fontSize: 12 }}>
+                                Download
+                              </a>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {templatesMessage && (
+                  <div style={{ marginTop: 12 }} className={`text-sm ${templatesMessage.type === 'error' ? 'text-danger' : 'text-success'}`}>
+                    {templatesMessage.text}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowTemplatesModal(false)} disabled={downloadingTemplates}>Cancel</button>
+                <button className="btn btn-primary" onClick={() => downloadSelectedTemplates()} disabled={downloadingTemplates}>
+                  {downloadingTemplates ? "Downloading..." : "Download Selected"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ✅ First Modal: Save Analysis Prompt */}
       {showSavePrompt && (
         <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}>
@@ -432,9 +621,8 @@ export default function EcommerceDashboard({ match }) {
                     onChange={(e) => setMonth(Number(e.target.value))}
                   >
                     <option value="">Select Month</option>
-                    {[
-                      "January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"
+                    {[ "January", "February", "March", "April", "May", "June",
+                       "July", "August", "September", "October", "November", "December"
                     ].map((m, idx) => (
                       <option key={idx + 1} value={idx + 1}>{m}</option>
                     ))}

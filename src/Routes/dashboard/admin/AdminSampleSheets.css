@@ -1,0 +1,134 @@
+/* ===== Container ===== */
+.sample-sheets-container {
+  padding: 1.5rem; /* p-6 */
+}
+
+.sample-sheets-title {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 600;   /* font-semibold */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+/* ===== Grid of Sheets ===== */
+.sheets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* grid-cols-2 */
+  gap: 1rem; /* gap-4 */
+  margin-bottom: 1.5rem; /* mb-6 */
+}
+
+/* ===== Individual Sheet Card ===== */
+.sheet-card {
+  background-color: white;          /* bg-white */
+  padding: 1rem;                    /* p-4 */
+  border-radius: 0.25rem;           /* rounded */
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06); /* shadow */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;   /* flex items-center justify-between */
+}
+
+.sheet-label {
+  font-weight: 500;                 /* font-medium */
+}
+
+.sheet-timestamp {
+  font-size: 0.75rem;               /* text-xs */
+  color: #64748b;                    /* text-slate-500 */
+  margin-top: 0.25rem;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 0.5rem;                      /* gap-2 */
+}
+
+/* ===== Buttons ===== */
+.btn-download,
+.btn-upload-update {
+  padding: 0.25rem 0.75rem;          /* px-3 py-1 */
+  border: 1px solid #e2e8f0;         /* border (slate-200) */
+  border-radius: 0.25rem;            /* rounded */
+  font-size: 0.875rem;               /* text-sm */
+  text-decoration: none;
+  cursor: pointer;
+  background-color: white;
+  color: #1e293b;                     /* slate-800 */
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-download:hover,
+.btn-upload-update:hover {
+  background-color: #f8fafc;          /* slate-50 */
+}
+
+.btn-upload-update {
+  background-color: #1e293b;          /* bg-slate-800 */
+  color: white;
+  border: 1px solid #1e293b;
+}
+
+.btn-upload-update:hover {
+  background-color: #334155;          /* slate-700 */
+  border-color: #334155;
+}
+
+/* ===== Upload Form ===== */
+.upload-form {
+  background-color: white;
+  padding: 1rem;                      /* p-4 */
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+  max-width: 36rem;                    /* max-w-xl */
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;                        /* gap-3 */
+  margin-bottom: 0.75rem;              /* mb-3 */
+}
+
+.select-sheet {
+  padding: 0.5rem 0.75rem;             /* px-3 py-2 */
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  background-color: white;
+  font-size: 0.875rem;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.file-input {
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.btn-submit-upload {
+  padding: 0.5rem 0.75rem;             /* px-3 py-2 */
+  background-color: #2563eb;            /* bg-blue-600 */
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-submit-upload:hover {
+  background-color: #1d4ed8;            /* blue-700 */
+}
+
+/* ===== Messages ===== */
+.message {
+  font-size: 0.875rem;                  /* text-sm */
+  margin-top: 0.5rem;
+}
+
+.message-success {
+  color: #16a34a;                       /* text-green-600 */
+}
+
+.message-error {
+  color: #dc2626;                       /* text-red-600 */
+}

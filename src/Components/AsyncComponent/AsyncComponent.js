@@ -71,7 +71,18 @@ const AsynSubCompaniesManagement = Loadable({
 const AsynUserProfile = Loadable({
 	loader:() => import("Components/Sidebar/UserProfile"),
 	loading: () => <RctPageLoader />,
-})
+});
+
+const AsyncAdminDashboardComponent = Loadable({
+	loader:() => import("Routes/dashboard/admin/AdminDashboard"),
+	loading: () => <RctPageLoader />,
+});
+
+const AsyncAdminSampleSheets = Loadable({
+	loader:() => import("Routes/dashboard/admin/AdminSampleSheets"),
+	loading: () => <RctPageLoader />,
+});
+
 
 
 
@@ -87,5 +98,7 @@ export {
 	AsynQuickActions,
 	AsynSubCompaniesManagement,
 	AsynUserProfile,
-	AsyncLiabilityTrackerComponent
+	AsyncLiabilityTrackerComponent,
+	AsyncAdminDashboardComponent,
+	AsyncAdminSampleSheets
 };

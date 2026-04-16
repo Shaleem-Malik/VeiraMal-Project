@@ -48,6 +48,18 @@ let sidebarMenu = {
                "new_item": false,
                "menu_title": "Manage Subcompanies",
                "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/admin",
+               "new_item": false,
+               "menu_title": "Admin Dashboard",
+               "roles": ["superAdmin"]
+            },
+            {
+               "path": "/app/dashboard/admin-sample-sheets",
+               "new_item": false,
+               "menu_title": "Admin Sample Sheets",
+               "roles": ["superAdmin"]             
             }
          ]
       }

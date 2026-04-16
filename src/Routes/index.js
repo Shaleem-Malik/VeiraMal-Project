@@ -7,6 +7,7 @@ import ResetPassword from 'Container/ResetPassword';
 import BusinessUnitSelector from 'Container/BusinessUnitSelector';
 import CompanySelector from 'Container/CompanySelector';
 import CheckoutSuccess from 'Container/CheckoutSuccess';
+import AuthImpersonate from 'Container/AuthImpersonate';
 
 let routes = [
   {
@@ -40,6 +41,10 @@ let routes = [
   {
     path: 'checkout-success',
     component: CheckoutSuccess
+  },
+  {
+    path: 'auth/impersonate',
+    component: AuthImpersonate
   }
 ];
 

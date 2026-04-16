@@ -74,6 +74,16 @@ export const fetchCompanyDetails = () => async (dispatch) => {
 
     console.log("✅ Company data fetched:", response.data);
 
+    // --- NEW: Store location in localStorage ---
+    const companyData = response.data;
+    const location = companyData.location || companyData.Location; // handle both casings
+    if (location) {
+      localStorage.setItem('companyLocation', location);
+    } else {
+      localStorage.removeItem('companyLocation'); // clear if not present
+    }
+    // -------------------------------------------
+
     dispatch(fetchCompanySuccess(response.data));
   } catch (error) {
     const message =

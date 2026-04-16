@@ -13,11 +13,18 @@ import {
   Cell,
 } from "recharts";
 import {
-  Button
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  LinearProgress,
+  Typography,
 } from "@material-ui/core";
-import { fetchLiabilityTracker } from "../../../Store/Actions/liabilityActions";
+import axios from "axios";
 import { NotificationManager } from "react-notifications";
 import { useHistory } from "react-router-dom";
+import { fetchLiabilityTracker } from "../../../Store/Actions/liabilityActions";
 
 // Color palette for different functions
 const FUNCTION_COLORS = [
@@ -27,31 +34,33 @@ const FUNCTION_COLORS = [
   "#3f51b5", "#e91e63", "#00bcd4", "#009688", "#ff9800"
 ];
 
+const API_BASE_URL = process.env.REACT_APP_BASE_URL || "/api/";
+
 // Generate a consistent color for a function name
 const getFunctionColor = (func) => {
   if (!func) return "#cccccc";
   let hash = 0;
   for (let i = 0; i < func.length; i++) {
     hash = ((hash << 5) - hash) + func.charCodeAt(i);
-    hash |= 0; // Convert to 32bit integer
+    hash |= 0;
   }
   const index = Math.abs(hash) % FUNCTION_COLORS.length;
   return FUNCTION_COLORS[index];
 };
 
-// Custom tooltip that shows function and other details
-const CustomTooltip = ({ active, payload, label }) => {
+// Custom tooltip
+const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload; // the original data item
+    const data = payload[0].payload;
     return (
       <div
         className="custom-tooltip"
         style={{
-          backgroundColor: '#fff',
-          padding: '10px',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+          backgroundColor: "#fff",
+          padding: "10px",
+          border: "1px solid #ccc",
+          borderRadius: "4px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         }}
       >
         <p><strong>{data.name}</strong></p>
@@ -65,18 +74,35 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // Formatting helpers
-const formatDays = (value) => value.toLocaleString() + " days";
+const formatDays = (value) => `${Number(value).toLocaleString()} days`;
 const formatCurrency = (value) =>
-  value.toLocaleString(undefined, {
+  Number(value).toLocaleString(undefined, {
     style: "currency",
     currency: "AUD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
 
+const EMPTY_FILES = {
+  headcount: null,
+  leaveTaken: null,
+  sapLeaveBalance: null,
+  baseRates: null,
+};
+
+async function uploadSingleFile(endpoint, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await axios.post(`${API_BASE_URL}${endpoint}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return res.data;
+}
+
 /**
- * Renders two liability graphs with function filtering.
- * @param {string} date - Optional date string to pass to fetch.
+ * Renders two liability graphs with function filtering and upload modal.
  */
 export default function LiabilityGraphs({ date = null }) {
   const dispatch = useDispatch();
@@ -84,17 +110,19 @@ export default function LiabilityGraphs({ date = null }) {
     (state) => state.liabilities || { loading: false, data: [], error: null }
   );
 
-  // Separate function selections for each graph
   const [deptSelectedFunctions, setDeptSelectedFunctions] = useState([]);
   const [empSelectedFunctions, setEmpSelectedFunctions] = useState([]);
   const [functionSearch, setFunctionSearch] = useState("");
 
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [files, setFiles] = useState(EMPTY_FILES);
+
   const history = useHistory();
 
-  // Load data if not already present
   useEffect(() => {
     if (!data || data.length === 0) {
-      dispatch(fetchLiabilityTracker(date));
+      dispatch(fetchLiabilityTracker());
     }
   }, [dispatch, date, data]);
 
@@ -102,7 +130,10 @@ export default function LiabilityGraphs({ date = null }) {
     if (error) NotificationManager.error(error);
   }, [error]);
 
-  // Get unique functions from data
+  const allFilesAttached = useMemo(() => {
+    return !!files.headcount && !!files.leaveTaken && !!files.sapLeaveBalance && !!files.baseRates;
+  }, [files]);
+
   const allFunctions = useMemo(() => {
     if (!Array.isArray(data)) return [];
     const funcSet = new Set();
@@ -112,7 +143,6 @@ export default function LiabilityGraphs({ date = null }) {
     return Array.from(funcSet).sort();
   }, [data]);
 
-  // Filter functions by search
   const filteredFunctions = useMemo(() => {
     if (!functionSearch.trim()) return allFunctions;
     return allFunctions.filter((f) =>
@@ -120,7 +150,6 @@ export default function LiabilityGraphs({ date = null }) {
     );
   }, [allFunctions, functionSearch]);
 
-  // Handlers for function selection
   const toggleDeptFunction = (func) => {
     setDeptSelectedFunctions((prev) =>
       prev.includes(func) ? prev.filter((f) => f !== func) : [...prev, func]
@@ -139,7 +168,6 @@ export default function LiabilityGraphs({ date = null }) {
   const selectAllEmp = () => setEmpSelectedFunctions([...allFunctions]);
   const clearAllEmp = () => setEmpSelectedFunctions([]);
 
-  // Filter data by selected functions
   const deptFilteredData = useMemo(() => {
     if (!Array.isArray(data)) return [];
     if (deptSelectedFunctions.length === 0) return data;
@@ -152,7 +180,6 @@ export default function LiabilityGraphs({ date = null }) {
     return data.filter((item) => empSelectedFunctions.includes(item.function));
   }, [data, empSelectedFunctions]);
 
-  // Department aggregation: group by organizationalUnit, sum balanceDays
   const departmentData = useMemo(() => {
     const agg = {};
     deptFilteredData.forEach((item) => {
@@ -161,78 +188,123 @@ export default function LiabilityGraphs({ date = null }) {
       agg[dept] = (agg[dept] || 0) + days;
     });
 
-    // Convert to array and sort by days descending, take top 50
-    const sorted = Object.entries(agg)
+    return Object.entries(agg)
       .map(([name, totalDays]) => ({ name, totalDays }))
       .sort((a, b) => b.totalDays - a.totalDays)
       .slice(0, 50);
-
-    return sorted;
   }, [deptFilteredData]);
 
-  // Employee top 50 by liabilityAmount – now includes function and department
   const employeeData = useMemo(() => {
-    const sorted = [...empFilteredData]
-      .sort((a, b) => {
-        const amtA = Number(a.liabilityAmount) || 0;
-        const amtB = Number(b.liabilityAmount) || 0;
-        return amtB - amtA;
-      })
+    return [...empFilteredData]
+      .sort((a, b) => (Number(b.liabilityAmount) || 0) - (Number(a.liabilityAmount) || 0))
       .slice(0, 50)
       .map((emp) => ({
         name: emp.employeeName || "Unknown",
         liabilityAmount: Number(emp.liabilityAmount) || 0,
         employeeId: emp.employeeId,
-        function: emp.function || "Unknown",          // for coloring & tooltip
-        organizationalUnit: emp.organizationalUnit,   // for tooltip
+        function: emp.function || "Unknown",
+        organizationalUnit: emp.organizationalUnit,
       }));
-    return sorted;
   }, [empFilteredData]);
 
-  // Compute unique functions present in employeeData for the legend
   const uniqueFunctionsInChart = useMemo(() => {
     const funcs = new Set();
-    employeeData.forEach(item => {
+    employeeData.forEach((item) => {
       if (item.function) funcs.add(item.function);
     });
     return Array.from(funcs).sort();
   }, [employeeData]);
 
+  const handleFileChange = (key) => (e) => {
+    setFiles((prev) => ({
+      ...prev,
+      [key]: e.target.files?.[0] || null,
+    }));
+  };
+
+  const resetUploadModal = () => {
+    setFiles(EMPTY_FILES);
+    setUploading(false);
+    setUploadOpen(false);
+  };
+
+  const handleUploadAndRecalculate = async () => {
+    if (!allFilesAttached || uploading) return;
+
+    try {
+      setUploading(true);
+
+      // Required order:
+      // 1) Headcount
+      await uploadSingleFile("headcount/upload", files.headcount);
+
+      // 2) Leave Taken
+      await uploadSingleFile("leavetaken/upload", files.leaveTaken);
+
+      // 3) SAP Leave Balance
+      await uploadSingleFile("leavebalance/upload", files.sapLeaveBalance);
+
+      // 4) Base Rates
+      await uploadSingleFile("baserates/upload", files.baseRates);
+
+      // Auto calculate
+      await axios.post(`${API_BASE_URL}liability/calculate`);
+
+      NotificationManager.success(
+        "Files uploaded successfully and liabilities recalculated."
+      );
+
+      // Refresh graphs
+      await dispatch(fetchLiabilityTracker());
+
+      resetUploadModal();
+    } catch (err) {
+      const msg = err?.response?.data || err.message || "Upload failed";
+      NotificationManager.error(typeof msg === "string" ? msg : "Upload failed");
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="liability-graphs-root">
       <div className="dashboard-controls">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div className="controls-left" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {/* Show Detailed Analysis Button */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <div className="controls-left" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             <Button
               variant="contained"
               color="primary"
               startIcon={<i className="icon-chart" />}
-              onClick={() => history.push('/app/dashboard/liability-tracker')}
+              onClick={() => history.push("/app/dashboard/liability-tracker")}
               style={{
-                borderRadius: '10px',
+                borderRadius: "10px",
                 fontWeight: 600,
-                textTransform: 'none',
+                textTransform: "none",
               }}
             >
               Show Detailed Analysis
             </Button>
 
-            {/* Upload Excel Button - Only for Super Users (commented out) */}
-            {/* <Button ... >Upload File</Button> */}
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setUploadOpen(true)}
+              style={{
+                borderRadius: "10px",
+                fontWeight: 600,
+                textTransform: "none",
+              }}
+            >
+              Upload Files
+            </Button>
           </div>
-
-          {/* Optional right side content can go here */}
         </div>
       </div>
 
       <h2>Liability Graphs</h2>
 
-      {/* Department Graph */}
       <div className="graph-container">
         <h3>Department Liability (Top 50 by Total Balance Days)</h3>
 
-        {/* Function filter for department graph */}
         <div className="function-filter">
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span>Functions:</span>
@@ -243,6 +315,7 @@ export default function LiabilityGraphs({ date = null }) {
               Clear All
             </button>
           </div>
+
           <input
             type="text"
             placeholder="Search functions..."
@@ -250,6 +323,7 @@ export default function LiabilityGraphs({ date = null }) {
             onChange={(e) => setFunctionSearch(e.target.value)}
             className="function-search"
           />
+
           <div className="checkbox-group">
             {filteredFunctions.map((func) => (
               <label key={func} className="checkbox-label">
@@ -265,9 +339,7 @@ export default function LiabilityGraphs({ date = null }) {
         </div>
 
         {loading && <div>Loading data...</div>}
-        {!loading && departmentData.length === 0 && (
-          <div>No department data available.</div>
-        )}
+        {!loading && departmentData.length === 0 && <div>No department data available.</div>}
         {!loading && departmentData.length > 0 && (
           <ResponsiveContainer width="100%" height={400}>
             <BarChart
@@ -291,11 +363,9 @@ export default function LiabilityGraphs({ date = null }) {
         )}
       </div>
 
-      {/* Employee Graph */}
       <div className="graph-container" style={{ marginTop: 40 }}>
         <h3>Employee Liability (Top 50 by Liability Amount)</h3>
 
-        {/* Function filter for employee graph */}
         <div className="function-filter">
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span>Functions:</span>
@@ -306,6 +376,7 @@ export default function LiabilityGraphs({ date = null }) {
               Clear All
             </button>
           </div>
+
           <input
             type="text"
             placeholder="Search functions..."
@@ -313,6 +384,7 @@ export default function LiabilityGraphs({ date = null }) {
             onChange={(e) => setFunctionSearch(e.target.value)}
             className="function-search"
           />
+
           <div className="checkbox-group">
             {filteredFunctions.map((func) => (
               <label key={func} className="checkbox-label">
@@ -328,9 +400,7 @@ export default function LiabilityGraphs({ date = null }) {
         </div>
 
         {loading && <div>Loading data...</div>}
-        {!loading && employeeData.length === 0 && (
-          <div>No employee data available.</div>
-        )}
+        {!loading && employeeData.length === 0 && <div>No employee data available.</div>}
         {!loading && employeeData.length > 0 && (
           <>
             <ResponsiveContainer width="100%" height={400}>
@@ -359,12 +429,11 @@ export default function LiabilityGraphs({ date = null }) {
               </BarChart>
             </ResponsiveContainer>
 
-            {/* Function Color Legend */}
             {uniqueFunctionsInChart.length > 0 && (
               <div className="function-legend">
                 <h4>Function Colors</h4>
                 <div className="legend-items">
-                  {uniqueFunctionsInChart.map(func => (
+                  {uniqueFunctionsInChart.map((func) => (
                     <div key={func} className="legend-item">
                       <span
                         className="color-swatch"
@@ -379,6 +448,67 @@ export default function LiabilityGraphs({ date = null }) {
           </>
         )}
       </div>
+
+      {/* Upload Modal */}
+      <Dialog
+        open={uploadOpen}
+        onClose={() => !uploading && resetUploadModal()}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Upload Leave Tracker Files</DialogTitle>
+        <DialogContent dividers>
+          {uploading && <LinearProgress style={{ marginBottom: 16 }} />}
+
+          <Typography variant="body2" style={{ marginBottom: 16 }}>
+            Upload the files in the required flow. Leave Taken must be uploaded before SAP Leave Balance.
+          </Typography>
+
+          <div className="upload-field">
+            <label>1. Headcount</label>
+            <input type="file" onChange={handleFileChange("headcount")} />
+            {files.headcount && <small>{files.headcount.name}</small>}
+          </div>
+
+          <div className="upload-field">
+            <label>2. Leave Taken</label>
+            <input type="file" onChange={handleFileChange("leaveTaken")} />
+            {files.leaveTaken && <small>{files.leaveTaken.name}</small>}
+          </div>
+
+          <div className="upload-field">
+            <label>3. SAP Leave Balance</label>
+            <input type="file" onChange={handleFileChange("sapLeaveBalance")} />
+            {files.sapLeaveBalance && <small>{files.sapLeaveBalance.name}</small>}
+          </div>
+
+          <div className="upload-field">
+            <label>4. Base Rates</label>
+            <input type="file" onChange={handleFileChange("baseRates")} />
+            {files.baseRates && <small>{files.baseRates.name}</small>}
+          </div>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={resetUploadModal}
+            disabled={uploading}
+            style={{ textTransform: "none" }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleUploadAndRecalculate}
+            disabled={!allFilesAttached || uploading}
+            style={{ textTransform: "none" }}
+          >
+            Upload
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <style jsx>{`
         .liability-graphs-root {
@@ -464,6 +594,20 @@ export default function LiabilityGraphs({ date = null }) {
         }
         .function-name {
           color: #374151;
+        }
+        .upload-field {
+          margin-bottom: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .upload-field label {
+          font-weight: 600;
+          color: #1f2937;
+        }
+        .upload-field small {
+          color: #6b7280;
+          word-break: break-all;
         }
       `}</style>
     </div>

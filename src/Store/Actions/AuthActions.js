@@ -7,6 +7,7 @@ import 'firebase/auth';
 import api from 'Api';
 import { loadStripe } from '@stripe/stripe-js';
 import { NotificationManager } from 'react-notifications';
+import { fetchCompanyDetails } from './companyActions';
 import {
   LOGIN_USER,
   LOGIN_USER_SUCCESS,
@@ -183,6 +184,8 @@ export const signinUserInFirebase = (user, history) => async (dispatch) => {
     }
     // ----------------------------------------------------------------------
 
+    dispatch(fetchCompanyDetails());
+
     dispatch({ type: LOGIN_USER_SUCCESS, payload: user.email });
 
     // Handle business unit selection (existing logic)
@@ -238,9 +241,15 @@ const routeBasedOnAccess = (access, history, isFirstLogin = false) => {
 
   if (normalizedAccess === 'admin') {
     history.push('/app/dashboard/ecommerce');
-  } else if (normalizedAccess === 'ceo' || normalizedAccess === 'hr') {
+  }
+  else if (normalizedAccess === 'superadmin' || normalizedAccess === 'super_admin' || normalizedAccess === 'super-admin')
+    {
+    history.push('/app/dashboard/admin');
+    } 
+  else if (normalizedAccess === 'ceo' || normalizedAccess === 'hr') {
     history.push('/app/crm/dashboard');
-  } else if (
+  } 
+  else if (
     normalizedAccess === 'superuser' ||
     normalizedAccess === 'super_user' ||
     normalizedAccess === 'super-user'
@@ -508,6 +517,7 @@ export const logoutUserFromFirebase = (history) => async (dispatch) => {
 /**
  * Redux Action To Signup User In Firebase (onboard company)
  */
+
 export const signupUserInFirebase = (user, history, urls = {}) => async (dispatch) => {
   dispatch({ type: SIGNUP_USER });
 
@@ -594,7 +604,7 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
       AdditionalSeatsRequested: Number(AdditionalSeatsRequested)
     };
 
-    // DEBUG (you can keep or remove)
+    // DEBUG
     console.info('[signupUserInFirebase] extracted payload values:', {
       SuperUserEmail, SuperUserFirstName, SuperUserMiddleName, SuperUserLastName,
       SuperUserContactNumber, SuperUserLocation, CompanyName, CompanyABN, ContactNumber, CompanyLocation,
@@ -615,25 +625,28 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
       throw new Error(message);
     }
 
-    // Build request body for your backend CompaniesController
+    // Build request body for backend CompaniesController
     const successUrl = (urls && urls.successUrl) || (window.location.origin + '/checkout-success');
     const cancelUrl = (urls && urls.cancelUrl) || (window.location.origin + '/checkout-cancel');
     const signInUrl = (urls && urls.signInUrl) || (window.location.origin + '/signin');
+
+    // Accept paymentOptions passed via urls.paymentOptions
+    const paymentOptions = (urls && urls.paymentOptions) || null;
 
     const requestBody = {
       Dto: payload,
       SuccessUrl: successUrl,
       CancelUrl: cancelUrl,
       SignInUrl: signInUrl,
-      Currency: 'aud'
+      Currency: 'aud',
+      PaymentOptions: paymentOptions
     };
 
-    // Try two common endpoint forms (some codebases use capitalized route or plural)
+    // Try two common endpoint forms
     let response;
     try {
       response = await api.post('Company/onboard', requestBody);
     } catch (err) {
-      // if first endpoint failed, try alternate casing — helpful for legacy controllers
       if (err?.response?.status === 404 || err?.response?.status === 400) {
         response = await api.post('Company/onboard', requestBody);
       } else {
@@ -641,7 +654,6 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
       }
     }
 
-    // Response expected: { sessionId, url } from CompaniesController
     const data = response.data || {};
 
     // If the backend returned a sessionId/url, redirect to Stripe Checkout
@@ -653,20 +665,16 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
         throw new Error('Missing REACT_APP_STRIPE_PUBLISHABLE_KEY');
       }
 
-      // Try to use Stripe's redirectToCheckout. If loadStripe fails, fallback to opening url.
       try {
         const stripe = await loadStripe(publishableKey);
         if (stripe && data.sessionId) {
-          // this will redirect the user away (and not return unless there's an error)
           const result = await stripe.redirectToCheckout({ sessionId: data.sessionId });
           if (result && result.error) {
-            // redirectToCheckout failed - fallback to the returned URL if available
             console.error('stripe.redirectToCheckout error', result.error);
             if (data.url) window.location.href = data.url;
             else NotificationManager.error(result.error.message || 'Stripe checkout start failed.');
           }
         } else {
-          // fallback: navigate to the session URL returned by server
           if (data.url) window.location.href = data.url;
           else {
             NotificationManager.error('Unable to start Stripe checkout. No session id or url was returned.');
@@ -684,13 +692,11 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
         }
       }
 
-      // Do NOT dispatch success here because user will be redirected to Stripe.
-      // But to keep Redux state consistent, we can mark success locally:
       dispatch({ type: SIGNUP_USER_SUCCESS, payload: data });
       return data;
     }
 
-    // If no sessionId/url returned, fall back to legacy behavior (server may have completed onboarding synchronously)
+    // If no sessionId/url returned, fall back to legacy behavior
     dispatch({ type: SIGNUP_USER_SUCCESS, payload: response.data });
 
     const successMsg = response.data?.Message || response.data?.message || 'Company created. Check your email for sign-in details.';
@@ -702,7 +708,7 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
 
     return response.data;
   } catch (err) {
-    // extract server-friendly message (ModelState / ProblemDetails)
+    // extract server-friendly message
     let serverMessage = err?.response?.data?.Message || err?.response?.data?.message || null;
 
     if (!serverMessage && err?.response?.data?.errors) {

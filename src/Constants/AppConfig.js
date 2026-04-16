@@ -21,7 +21,7 @@ const AppConfig = {
       icon: 'en',
    },
    enableUserTour: process.env.NODE_ENV === 'production' ? true : false,  // Enable / Disable User Tour
-   copyRightText: 'Reactify © 2023 All Rights Reserved.',      // Copy Right Text
+   copyRightText: 'HR Analytix – All Rights Reserved',      // Copy Right Text
    // light theme colors
    themeColors: {
       'primary': '#5D92F4',

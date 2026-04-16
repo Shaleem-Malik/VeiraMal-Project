@@ -25,6 +25,7 @@ import CompanySelector from './CompanySelector';
 import CheckoutSuccess from './CheckoutSuccess';
 import CheckoutCancel from './CheckoutCancel';
 import ForgotPassword from './ForgotPassword';
+import AuthImpersonate from './AuthImpersonate';
 
 function App(props) {
    const { location } = props;
@@ -58,6 +59,7 @@ function App(props) {
             <Route path={`${basePath}/checkout-success`} component={CheckoutSuccess} />
             <Route path={`${basePath}/checkout-cancel`} component={CheckoutCancel} />
             <Route path={`${basePath}/forgot-password`} component={ForgotPassword} />
+            <Route path={`${basePath}/auth/impersonate`} component={AuthImpersonate} />
          </Switch>
       </RctThemeProvider>
    );
