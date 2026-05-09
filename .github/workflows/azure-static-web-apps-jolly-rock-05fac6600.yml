@@ -19,6 +19,7 @@ jobs:
       NODE_VERSION: '18'
       # allow install despite peer-deps conflicts (MUI v4 + React 18)
       NPM_CONFIG_LEGACY_PEER_DEPS: 'true'
+      REACT_APP_GOOGLE_MAPS_API_KEY: ${{ secrets.REACT_APP_GOOGLE_MAPS_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
