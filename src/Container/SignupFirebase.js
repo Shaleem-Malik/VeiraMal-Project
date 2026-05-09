@@ -142,6 +142,9 @@ export default function SignupFirebase(props) {
     const [companyABN, setCompanyABN] = useState('');
     const [companyLocation, setCompanyLocation] = useState('');
     const [superUserLocation, setSuperUserLocation] = useState('');
+    const [abnValidated, setAbnValidated] = useState(false);
+    const [abnChecking, setAbnChecking] = useState(false);
+    const [abnServerError, setAbnServerError] = useState('');
 
     // Validation errors
     const [errors, setErrors] = useState({
@@ -169,6 +172,102 @@ export default function SignupFirebase(props) {
     // Dialog state
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const [dialogLoading, setDialogLoading] = useState(false);
+
+    // Google Maps API key from environment
+    const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
+     // Refs for the location inputs
+    const companyLocationInputRef = useRef(null);
+    const superUserLocationInputRef = useRef(null);
+
+     const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
+
+         // ---------- Load Google Maps script ----------
+    useEffect(() => {
+        if (!googleMapsApiKey) {
+            console.warn('Google Maps API key missing – Places Autocomplete disabled.');
+            return;
+        }
+        // If already loaded (e.g. another component loaded it), mark ready
+        if (window.google && window.google.maps && window.google.maps.places) {
+            setGoogleScriptLoaded(true);
+            return;
+        }
+
+        const scriptId = 'google-maps-script';
+        // Another component may have started loading it
+        if (document.getElementById(scriptId)) {
+            const checkExist = setInterval(() => {
+                if (window.google && window.google.maps && window.google.maps.places) {
+                    setGoogleScriptLoaded(true);
+                    clearInterval(checkExist);
+                }
+            }, 300);
+            return () => clearInterval(checkExist);
+        }
+
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => setGoogleScriptLoaded(true);
+        script.onerror = () => console.error('Failed to load Google Maps API script.');
+        document.head.appendChild(script);
+    }, []);
+
+    // ---------- Attach Autocomplete when inputs appear ----------
+    useEffect(() => {
+        if (!googleScriptLoaded || !showForm) return;
+
+        let autocompleteCompany = null;
+        let autocompleteSuperUser = null;
+
+        if (companyLocationInputRef.current) {
+            autocompleteCompany = new window.google.maps.places.Autocomplete(
+                companyLocationInputRef.current,
+                { types: ['address'] }
+            );
+            autocompleteCompany.addListener('place_changed', () => {
+                const place = autocompleteCompany.getPlace();
+                if (place.formatted_address) {
+                    setCompanyLocation(place.formatted_address);
+                }
+            });
+        }
+
+        if (superUserLocationInputRef.current) {
+            autocompleteSuperUser = new window.google.maps.places.Autocomplete(
+                superUserLocationInputRef.current,
+                { types: ['address'] }
+            );
+            autocompleteSuperUser.addListener('place_changed', () => {
+                const place = autocompleteSuperUser.getPlace();
+                if (place.formatted_address) {
+                    setSuperUserLocation(place.formatted_address);
+                }
+            });
+        }
+
+        return () => {
+            if (autocompleteCompany) {
+                window.google.maps.event.clearInstanceListeners(autocompleteCompany);
+            }
+            if (autocompleteSuperUser) {
+                window.google.maps.event.clearInstanceListeners(autocompleteSuperUser);
+            }
+        };
+    }, [googleScriptLoaded, showForm]);
+
+    // ---------- Fix z-index of Google dropdown ----------
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `.pac-container { z-index: 2000 !important; }`;
+        document.head.appendChild(style);
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
 
     useEffect(() => {
         const savedPlan = localStorage.getItem(LS_KEY_PLAN);
@@ -205,6 +304,59 @@ export default function SignupFirebase(props) {
     const handleBlur = (fieldName) => (e) => {
         setTouched(prev => ({ ...prev, [fieldName]: true }));
         validateField(fieldName, e.target.value);
+    };
+
+    const normalizeABN = (abn) => String(abn || '').replace(/\D/g, '').slice(0, 11);
+
+    const validateABN = (abn) => {
+        const cleaned = normalizeABN(abn);
+        if (!cleaned) return { isValid: false, message: 'Company ABN is required' };
+        if (cleaned.length !== 11) return { isValid: false, message: 'ABN must be exactly 11 digits' };
+        if (!/^\d+$/.test(cleaned)) return { isValid: false, message: 'ABN must contain only numbers' };
+        return { isValid: true, message: '' };
+    };
+
+    const checkAbnWithServer = async (value = companyABN) => {
+        const cleaned = normalizeABN(value);
+
+        if (!cleaned) {
+            setAbnValidated(false);
+            setAbnServerError('Company ABN is required');
+            setErrors(prev => ({ ...prev, companyABN: 'Company ABN is required' }));
+            return false;
+        }
+
+        setAbnChecking(true);
+        setAbnServerError('');
+
+        try {
+            const res = await api.post('Abn/validate', { abn: cleaned });
+
+            if (!res?.data?.isValid) {
+                const msg = res?.data?.message || res?.data?.abnError || 'ABN is not valid';
+                setAbnValidated(false);
+                setAbnServerError(msg);
+                setErrors(prev => ({ ...prev, companyABN: msg }));
+                return false;
+            }
+
+            setAbnValidated(true);
+            setAbnServerError('');
+            setErrors(prev => ({ ...prev, companyABN: '' }));
+            return true;
+        } catch (err) {
+            const msg =
+                err?.response?.data?.abnError ||
+                err?.response?.data?.message ||
+                'ABN validation failed';
+
+            setAbnValidated(false);
+            setAbnServerError(msg);
+            setErrors(prev => ({ ...prev, companyABN: msg }));
+            return false;
+        } finally {
+            setAbnChecking(false);
+        }
     };
 
     const validateField = (fieldName, value) => {
@@ -244,7 +396,7 @@ export default function SignupFirebase(props) {
             companyName: validateRequired(companyName, 'Company name').message,
             companyABN: validateABN(companyABN).message,
             companyContactNumber: validatePhone(companyContactNumber, 'Company contact number').message,
-            superUserContactNumber: validatePhone(superUserContactNumber, 'superUser contact number').message
+            superUserContactNumber: validatePhone(superUserContactNumber, 'Superuser contact number').message
         };
 
         setErrors(newErrors);
@@ -395,6 +547,13 @@ export default function SignupFirebase(props) {
             return;
         }
 
+        const abnOk = await checkAbnWithServer(companyABN);
+        if (!abnOk) {
+            NotificationManager.error('Please enter a valid ABN before continuing.');
+            return;
+        }
+
+
         const additionalSeats = Math.max(0, parseInt(additionalSeatsRequested || '0', 10) || 0);
         const planId = extractPlanId(selectedPlan);
 
@@ -474,9 +633,24 @@ export default function SignupFirebase(props) {
     };
 
     const handleCompanyABNChange = (e) => {
-        const value = e.target.value.replace(/\s/g, '').slice(0, 11);
+        const value = e.target.value.replace(/\D/g, '').slice(0, 11);
         setCompanyABN(value);
+        setAbnValidated(false);
+        setAbnServerError('');
+
         if (touched.companyABN) validateField('companyABN', value);
+    };
+
+    const handleCompanyABNBlur = async () => {
+        setTouched(prev => ({ ...prev, companyABN: true }));
+
+        const localValid = validateField('companyABN', companyABN);
+        if (!localValid) {
+            setAbnValidated(false);
+            return;
+        }
+
+        await checkAbnWithServer(companyABN);
     };
 
     const handleCompanyPhoneChange = (e) => {
@@ -503,7 +677,7 @@ export default function SignupFirebase(props) {
         if (touched.companyName) validateField('companyName', value);
     };
 
-    return (
+        return (
         <QueueAnim type="bottom" duration={900}>
             <Helmet><title>Signup</title></Helmet>
 
@@ -724,13 +898,13 @@ export default function SignupFirebase(props) {
                                                             label="Superuser Contact Number (optional)"
                                                             variant="outlined"
                                                             fullWidth
-                                                            value={formatAusPhone(superUserContactNumber)}             // ← formatted for display
+                                                            value={formatAusPhone(superUserContactNumber)}
                                                             onChange={handleSuperUserPhoneChange}
                                                             onBlur={handleBlur('superUserContactNumber')}
                                                             error={touched.superUserContactNumber && !!errors.superUserContactNumber}
                                                             className={classes.fieldError}
                                                             helperText="If empty, company contact number will be used."
-                                                            inputProps={{ maxLength: 12 }}  // allow for spaces in display
+                                                            inputProps={{ maxLength: 12 }}
                                                         />
                                                         {touched.superUserContactNumber && errors.superUserContactNumber && (
                                                             <FormHelperText error className={classes.errorText}>
@@ -739,7 +913,7 @@ export default function SignupFirebase(props) {
                                                         )}
                                                     </Grid>
 
-                                                    {/* Superuser Location (optional) */}
+                                                    {/* Superuser Location (optional) – Google Autocomplete */}
                                                     <Grid item xs={12} sm={6}>
                                                         <TextField
                                                             label="Superuser Location (optional)"
@@ -747,6 +921,7 @@ export default function SignupFirebase(props) {
                                                             fullWidth
                                                             value={superUserLocation}
                                                             onChange={(e) => setSuperUserLocation(e.target.value)}
+                                                            inputRef={superUserLocationInputRef}
                                                             helperText="If empty, company location will be used."
                                                         />
                                                     </Grid>
@@ -779,20 +954,20 @@ export default function SignupFirebase(props) {
                                                             fullWidth
                                                             value={companyABN}
                                                             onChange={handleCompanyABNChange}
-                                                            onBlur={handleBlur('companyABN')}
-                                                            error={touched.companyABN && !!errors.companyABN}
+                                                            onBlur={handleCompanyABNBlur}
+                                                            error={touched.companyABN && (!!errors.companyABN || !!abnServerError)}
                                                             className={classes.fieldError}
                                                             inputProps={{ maxLength: 11 }}
-                                                            helperText="Optional. Must be exactly 11 digits if provided"
+                                                            helperText={
+                                                                abnChecking
+                                                                    ? 'Validating ABN with ABN Lookup...'
+                                                                    : (abnServerError || 'Company ABN is required and will be validated')
+                                                            }
+                                                            required
                                                         />
-                                                        {touched.companyABN && errors.companyABN && (
-                                                            <FormHelperText error className={classes.errorText}>
-                                                                {errors.companyABN}
-                                                            </FormHelperText>
-                                                        )}
                                                     </Grid>
 
-                                                    {/* Company Location */}
+                                                    {/* Company Location – Google Autocomplete */}
                                                     <Grid item xs={12} sm={6}>
                                                         <TextField
                                                             label="Company Location (address)"
@@ -800,6 +975,7 @@ export default function SignupFirebase(props) {
                                                             fullWidth
                                                             value={companyLocation}
                                                             onChange={(e) => setCompanyLocation(e.target.value)}
+                                                            inputRef={companyLocationInputRef}
                                                             helperText="Optional address / location of company"
                                                         />
                                                     </Grid>
@@ -860,7 +1036,14 @@ export default function SignupFirebase(props) {
                                                                 color="primary"
                                                                 size="large"
                                                                 onClick={onUserSignUp}
-                                                                disabled={!selectedPlan || loading || submitting || Object.values(errors).some(error => error !== '')}
+                                                                disabled={
+                                                                    !selectedPlan ||
+                                                                    loading ||
+                                                                    submitting ||
+                                                                    abnChecking ||
+                                                                    Object.values(errors).some(error => error !== '') ||
+                                                                    !abnValidated
+                                                                }
                                                             >
                                                                 {submitting ? 'Creating...' : (billingMode === 'subscription'
                                                                     ? (selectedPlan?.pricePerMonth ? `Create Company — AUD ${computeMonthlyTotal().toLocaleString()}/mo (subscribe)` : 'Create Company — Contact Sales')

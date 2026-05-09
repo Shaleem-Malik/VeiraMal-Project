@@ -242,13 +242,12 @@ const routeBasedOnAccess = (access, history, isFirstLogin = false) => {
   if (normalizedAccess === 'admin') {
     history.push('/app/dashboard/ecommerce');
   }
-  else if (normalizedAccess === 'superadmin' || normalizedAccess === 'super_admin' || normalizedAccess === 'super-admin')
-    {
+  else if (normalizedAccess === 'superadmin' || normalizedAccess === 'super_admin' || normalizedAccess === 'super-admin') {
     history.push('/app/dashboard/admin');
-    } 
+  }
   else if (normalizedAccess === 'ceo' || normalizedAccess === 'hr') {
     history.push('/app/crm/dashboard');
-  } 
+  }
   else if (
     normalizedAccess === 'superuser' ||
     normalizedAccess === 'super_user' ||
@@ -548,7 +547,7 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
     const SuperUserLastName = (get(user, 'SuperUserLastName', 'superUserLastName', 'lastName', 'LastName') ?? '') || '';
 
     const CompanyName = String(get(user, 'CompanyName', 'companyName', 'company') ?? '').trim();
-    const CompanyABN = (get(user, 'CompanyABN', 'companyABN', 'company_abn') ?? '') || '';
+    const CompanyABN = String(get(user, 'CompanyABN', 'companyABN', 'company_abn') ?? '').replace(/\D/g, '').slice(0, 11);
     const ContactNumber = (get(user, 'ContactNumber', 'contactNumber', 'companyContactNumber', 'company_contact') ?? '') || '';
     const CompanyLocation = (get(user, 'CompanyLocation', 'companyLocation', 'companyLocationAddress', 'companyLocation') ?? '') || '';
 
@@ -632,6 +631,16 @@ export const signupUserInFirebase = (user, history, urls = {}) => async (dispatc
 
     // Accept paymentOptions passed via urls.paymentOptions
     const paymentOptions = (urls && urls.paymentOptions) || null;
+
+    if (!CompanyABN) {
+      throw new Error('Company ABN is required.');
+    }
+
+    const abnCheck = await api.post('Abn/validate', { abn: CompanyABN });
+
+    if (!abnCheck?.data?.isValid) {
+      throw new Error(abnCheck?.data?.message || abnCheck?.data?.abnError || 'ABN is not valid.');
+    }
 
     const requestBody = {
       Dto: payload,
