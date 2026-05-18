@@ -19,6 +19,7 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 import QueueAnim from 'rc-queue-anim';
 import { Helmet } from 'react-helmet';
 import DescriptionIcon from '@material-ui/icons/Description'; // optional icon for modal
+import TermsOfServiceModal from './TermsOfServiceModal';
 
 // redux action
 import { signinUserInFirebase } from 'Store/Actions';
@@ -127,83 +128,10 @@ function Signin(props) {
         {loading && <LinearProgress />}
 
         {/* Terms of Service Modal */}
-        <Dialog
+        <TermsOfServiceModal
           open={termsOpen}
           onClose={closeTermsModal}
-          scroll="paper"
-          aria-labelledby="terms-dialog-title"
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle id="terms-dialog-title">
-            <Box display="flex" alignItems="center">
-              <DescriptionIcon color="primary" style={{ marginRight: 8 }} />
-              <Typography variant="h5" component="span">
-                Terms of Service
-              </Typography>
-            </Box>
-          </DialogTitle>
-          <Divider />
-          <DialogContent dividers>
-            <Typography variant="body1" gutterBottom>
-              <strong>Last updated:</strong> January 1, 2025
-            </Typography>
-            <Typography variant="body2" paragraph>
-              Please read these Terms of Service ("Terms", "Terms of Service") carefully before using the HR Analytix website and software (the "Service") operated by HR Analytix ("us", "we", or "our").
-            </Typography>
-
-            <Typography variant="h6" gutterBottom>
-              1. Acceptance of Terms
-            </Typography>
-            <Typography variant="body2" paragraph>
-              By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the Service.
-            </Typography>
-
-            <Typography variant="h6" gutterBottom>
-              2. Accounts
-            </Typography>
-            <Typography variant="body2" paragraph>
-              When you create an account with us, you must provide accurate, complete, and current information. You are responsible for safeguarding the password and for all activities under your account.
-            </Typography>
-
-            <Typography variant="h6" gutterBottom>
-              3. Intellectual Property
-            </Typography>
-            <Typography variant="body2" paragraph>
-              The Service and its original content, features, and functionality are and will remain the exclusive property of HR Analytix and its licensors. The Service is protected by copyright, trademark, and other laws.
-            </Typography>
-
-            <Typography variant="h6" gutterBottom>
-              4. Termination
-            </Typography>
-            <Typography variant="body2" paragraph>
-              We may terminate or suspend your account immediately, without prior notice, for conduct that we believe violates these Terms or is harmful to other users of the Service, us, or third parties, or for any other reason.
-            </Typography>
-
-            <Typography variant="h6" gutterBottom>
-              5. Limitation of Liability
-            </Typography>
-            <Typography variant="body2" paragraph>
-              In no event shall HR Analytix, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your use or inability to use the Service; (ii) any unauthorized access to or use of our servers and/or any personal information stored therein.
-            </Typography>
-
-            <Typography variant="h6" gutterBottom>
-              6. Governing Law
-            </Typography>
-            <Typography variant="body2" paragraph>
-              These Terms shall be governed and construed in accordance with the laws of [Your Country/State], without regard to its conflict of law provisions.
-            </Typography>
-
-            <Typography variant="body2" paragraph>
-              Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions will remain in effect.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeTermsModal} color="primary" variant="contained">
-              Close
-            </Button>
-          </DialogActions>
-        </Dialog>
+        />
 
         <AppBar position="static" className="session-header">
           <Toolbar>

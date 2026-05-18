@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import "./AdminCompaniesPage.css"; // import custom styles
 
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5228";
+const API_BASE = process.env.REACT_APP_BASE_URL || "http://localhost:5228";
 const api = axios.create({ baseURL: API_BASE, withCredentials: true });
 
 // Toast notifications component
@@ -38,6 +38,59 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmText =
       </div>
     </div>
   );
+}
+
+function decodeJwtPayload(token) {
+  try {
+    if (!token || typeof token !== "string") return null;
+    const part = token.split(".")[1];
+    if (!part) return null;
+
+    const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+
+    const json = decodeURIComponent(
+      atob(padded)
+        .split("")
+        .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+
+    return JSON.parse(json);
+  } catch (err) {
+    console.error("Failed to decode JWT payload:", err);
+    return null;
+  }
+}
+
+function storeImpersonationSession(token) {
+  const payload = decodeJwtPayload(token) || {};
+
+  const userId = payload.userId ?? payload.UserId ?? "";
+  const companyId = payload.companyId ?? payload.CompanyId ?? "";
+  const access = payload.access ?? payload.Access ?? "";
+  const businessUnit = payload.businessUnit ?? payload.BusinessUnit ?? "";
+
+  localStorage.setItem("token", token);
+  localStorage.setItem("userId", String(userId));
+  localStorage.setItem("companyId", String(companyId));
+  localStorage.setItem("access", String(access));
+  localStorage.setItem("BusinessUnit", String(businessUnit));
+  localStorage.setItem("isImpersonation", "1");
+
+  // optional: keep a single-source current user object
+  localStorage.setItem(
+    "currentUser",
+    JSON.stringify({
+      token,
+      userId: String(userId),
+      companyId: String(companyId),
+      access: String(access),
+      BusinessUnit: String(businessUnit),
+    })
+  );
+
+  return payload;
 }
 
 export default function AdminCompaniesPage() {
@@ -106,17 +159,17 @@ export default function AdminCompaniesPage() {
     try {
       setLoadingCompanies(true);
       setError(null);
-      const res = await api.get("/api/admin/companies");
+      const res = await api.get("admin/companies");
       const data = res.data || [];
       const filtered = debouncedSearch
         ? data.filter(c => {
-            const s = debouncedSearch.toLowerCase();
-            return (
-              (c.companyName || "").toLowerCase().includes(s) ||
-              (c.contactNumber || "").toLowerCase().includes(s) ||
-              (c.location || "").toLowerCase().includes(s)
-            );
-          })
+          const s = debouncedSearch.toLowerCase();
+          return (
+            (c.companyName || "").toLowerCase().includes(s) ||
+            (c.contactNumber || "").toLowerCase().includes(s) ||
+            (c.location || "").toLowerCase().includes(s)
+          );
+        })
         : data;
       setCompanies(filtered);
     } catch (err) {
@@ -133,7 +186,7 @@ export default function AdminCompaniesPage() {
       setLoadingUsers(true);
       setError(null);
       setUserPage(1);
-      const res = await api.get(`/api/admin/companies/${companyId}/users`);
+      const res = await api.get(`admin/companies/${companyId}/users`);
       setCompanyUsers(res.data || []);
     } catch (err) {
       console.error(err);
@@ -146,8 +199,16 @@ export default function AdminCompaniesPage() {
 
   async function handleImpersonateCompany(companyId) {
     try {
-      const res = await api.post(`/api/superadmin/impersonate`, { companyId });
-      const url = res.data?.impersonationUrl;
+      const res = await api.post(`superadmin/impersonate`, { companyId });
+
+      const token = res.data?.token || res.data?.Token;
+      const url = res.data?.impersonationUrl || res.data?.ImpersonationUrl;
+
+      if (token) {
+        const payload = storeImpersonationSession(token);
+        console.log("Impersonation claims:", payload);
+      }
+
       if (url) {
         window.open(url, "_blank");
         pushToast("Impersonation opened in new tab", "info");
@@ -165,8 +226,16 @@ export default function AdminCompaniesPage() {
 
   async function handleImpersonateUser(companyId, userId) {
     try {
-      const res = await api.post(`/api/superadmin/impersonate`, { companyId, userId });
-      const url = res.data?.impersonationUrl;
+      const res = await api.post(`superadmin/impersonate`, { companyId, userId });
+
+      const token = res.data?.token || res.data?.Token;
+      const url = res.data?.impersonationUrl || res.data?.ImpersonationUrl;
+
+      if (token) {
+        const payload = storeImpersonationSession(token);
+        console.log("Impersonation claims:", payload);
+      }
+
       if (url) {
         window.open(url, "_blank");
         pushToast("Impersonation opened in new tab", "info");
@@ -191,7 +260,7 @@ export default function AdminCompaniesPage() {
     const { companyId, userId, currentlyActive } = confirmPayload.current;
     setConfirmOpen(false);
     try {
-      await api.post(`/api/admin/companies/${companyId}/users/${userId}/toggle-active`);
+      await api.post(`admin/companies/${companyId}/users/${userId}/toggle-active`);
       setCompanyUsers(prev =>
         prev.map(u => (u.userId === userId ? { ...u, isActive: !currentlyActive } : u))
       );
@@ -213,7 +282,7 @@ export default function AdminCompaniesPage() {
     const { companyId, userId, userEmail } = resetPayload.current;
     setResetConfirmOpen(false);
     try {
-      await api.post(`/api/admin/companies/${companyId}/users/${userId}/reset-password`);
+      await api.post(`admin/companies/${companyId}/users/${userId}/reset-password`);
       pushToast(`Password reset email sent to ${userEmail || "user"}`);
     } catch (err) {
       console.error(err);
@@ -328,9 +397,8 @@ export default function AdminCompaniesPage() {
                         setSelectedCompanyId(c.companyId);
                         setUserPage(1);
                       }}
-                      className={`company-item ${
-                        selectedCompanyId === c.companyId ? "company-item-selected" : ""
-                      }`}
+                      className={`company-item ${selectedCompanyId === c.companyId ? "company-item-selected" : ""
+                        }`}
                       role="button"
                       tabIndex={0}
                     >

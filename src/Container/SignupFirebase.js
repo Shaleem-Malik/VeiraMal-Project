@@ -141,6 +141,11 @@ export default function SignupFirebase(props) {
     const [companyName, setCompanyName] = useState('');
     const [companyABN, setCompanyABN] = useState('');
     const [companyLocation, setCompanyLocation] = useState('');
+    const [companyStreet, setCompanyStreet] = useState('');
+    const [companySuburb, setCompanySuburb] = useState('');
+    const [companyState, setCompanyState] = useState('');
+    const [companyPostcode, setCompanyPostcode] = useState('');
+    const [companyCountry, setCompanyCountry] = useState('');
     const [superUserLocation, setSuperUserLocation] = useState('');
     const [abnValidated, setAbnValidated] = useState(false);
     const [abnChecking, setAbnChecking] = useState(false);
@@ -173,16 +178,19 @@ export default function SignupFirebase(props) {
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const [dialogLoading, setDialogLoading] = useState(false);
 
+    const [emailServerError, setEmailServerError] = useState('');
+    const emailInputRef = useRef(null);
+
     // Google Maps API key from environment
     const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
-     // Refs for the location inputs
+    // Refs for the location inputs
     const companyLocationInputRef = useRef(null);
     const superUserLocationInputRef = useRef(null);
 
-     const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
+    const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
 
-         // ---------- Load Google Maps script ----------
+    // ---------- Load Google Maps script ----------
     useEffect(() => {
         if (!googleMapsApiKey) {
             console.warn('Google Maps API key missing – Places Autocomplete disabled.');
@@ -228,11 +236,33 @@ export default function SignupFirebase(props) {
                 companyLocationInputRef.current,
                 { types: ['address'] }
             );
+
             autocompleteCompany.addListener('place_changed', () => {
                 const place = autocompleteCompany.getPlace();
-                if (place.formatted_address) {
-                    setCompanyLocation(place.formatted_address);
-                }
+                if (!place || !place.address_components) return;
+
+                const components = place.address_components;
+
+                const streetNumber = getAddressComponent(components, 'street_number');
+                const route = getAddressComponent(components, 'route');
+                const suburb =
+                    getAddressComponent(components, 'locality') ||
+                    getAddressComponent(components, 'postal_town') ||
+                    getAddressComponent(components, 'sublocality') ||
+                    getAddressComponent(components, 'administrative_area_level_2');
+                const state = getAddressComponent(components, 'administrative_area_level_1');
+                const postcode = getAddressComponent(components, 'postal_code');
+                const country = getAddressComponent(components, 'country');
+
+                const street = [streetNumber, route].filter(Boolean).join(' ').trim();
+                const fullAddress = place.formatted_address || [street, suburb, state, postcode, country].filter(Boolean).join(', ');
+
+                setCompanyStreet(street);
+                setCompanySuburb(suburb);
+                setCompanyState(state);
+                setCompanyPostcode(postcode);
+                setCompanyCountry(country);
+                setCompanyLocation(fullAddress);
             });
         }
 
@@ -314,6 +344,10 @@ export default function SignupFirebase(props) {
         if (cleaned.length !== 11) return { isValid: false, message: 'ABN must be exactly 11 digits' };
         if (!/^\d+$/.test(cleaned)) return { isValid: false, message: 'ABN must contain only numbers' };
         return { isValid: true, message: '' };
+    };
+    const getAddressComponent = (components, type) => {
+        const comp = components.find(c => c.types && c.types.includes(type));
+        return comp ? comp.long_name : '';
     };
 
     const checkAbnWithServer = async (value = companyABN) => {
@@ -619,6 +653,27 @@ export default function SignupFirebase(props) {
 
             await dispatch(signupUserInFirebase(payload, history, { successUrl, cancelUrl, signInUrl, paymentOptions }));
         } catch (err) {
+            const msg =
+                err?.response?.data?.message ||
+                err?.response?.data?.Message ||
+                err?.message ||
+                '';
+
+            if (
+                /email.*exist/i.test(msg) ||
+                /already.*email/i.test(msg) ||
+                /duplicate.*email/i.test(msg) ||
+                /user.*exists/i.test(msg)
+            ) {
+                setTouched(prev => ({ ...prev, email: true }));
+                setErrors(prev => ({ ...prev, email: 'Email already exists' }));
+                setEmailServerError('Email already exists');
+
+                setTimeout(() => {
+                    emailInputRef.current?.focus();
+                }, 100);
+            }
+
             console.error('Onboard error:', err);
         } finally {
             setSubmitting(false);
@@ -629,7 +684,15 @@ export default function SignupFirebase(props) {
     const handleEmailChange = (e) => {
         const value = e.target.value;
         setEmail(value);
+
+        if (emailServerError) setEmailServerError('');
+
         if (touched.email) validateField('email', value);
+    };
+
+    const handleEmailBlur = async (e) => {
+        setTouched(prev => ({ ...prev, email: true }));
+        validateField('email', e.target.value);
     };
 
     const handleCompanyABNChange = (e) => {
@@ -677,7 +740,7 @@ export default function SignupFirebase(props) {
         if (touched.companyName) validateField('companyName', value);
     };
 
-        return (
+    return (
         <QueueAnim type="bottom" duration={900}>
             <Helmet><title>Signup</title></Helmet>
 
@@ -814,16 +877,17 @@ export default function SignupFirebase(props) {
                                                             label="Email"
                                                             variant="outlined"
                                                             fullWidth
+                                                            inputRef={emailInputRef}
                                                             value={email}
                                                             onChange={handleEmailChange}
-                                                            onBlur={handleBlur('email')}
-                                                            error={touched.email && !!errors.email}
+                                                            onBlur={handleEmailBlur}
+                                                            error={touched.email && (!!errors.email || !!emailServerError)}
                                                             className={classes.fieldError}
                                                             required
                                                         />
-                                                        {touched.email && errors.email && (
+                                                        {touched.email && (errors.email || emailServerError) && (
                                                             <FormHelperText error className={classes.errorText}>
-                                                                {errors.email}
+                                                                {errors.email || emailServerError}
                                                             </FormHelperText>
                                                         )}
                                                     </Grid>
@@ -968,15 +1032,65 @@ export default function SignupFirebase(props) {
                                                     </Grid>
 
                                                     {/* Company Location – Google Autocomplete */}
-                                                    <Grid item xs={12} sm={6}>
+                                                    <Grid item xs={12}>
                                                         <TextField
-                                                            label="Company Location (address)"
+                                                            label="Company Address"
                                                             variant="outlined"
                                                             fullWidth
+                                                            inputRef={companyLocationInputRef}
                                                             value={companyLocation}
                                                             onChange={(e) => setCompanyLocation(e.target.value)}
-                                                            inputRef={companyLocationInputRef}
-                                                            helperText="Optional address / location of company"
+                                                            helperText="Start typing and choose an address from Google suggestions"
+                                                        />
+                                                    </Grid>
+
+                                                    <Grid item xs={12} sm={6}>
+                                                        <TextField
+                                                            label="Street"
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            value={companyStreet}
+                                                            onChange={(e) => setCompanyStreet(e.target.value)}
+                                                        />
+                                                    </Grid>
+
+                                                    <Grid item xs={12} sm={6}>
+                                                        <TextField
+                                                            label="Town / Suburb / City"
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            value={companySuburb}
+                                                            onChange={(e) => setCompanySuburb(e.target.value)}
+                                                        />
+                                                    </Grid>
+
+                                                    <Grid item xs={12} sm={4}>
+                                                        <TextField
+                                                            label="State"
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            value={companyState}
+                                                            onChange={(e) => setCompanyState(e.target.value)}
+                                                        />
+                                                    </Grid>
+
+                                                    <Grid item xs={12} sm={4}>
+                                                        <TextField
+                                                            label="Postcode"
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            value={companyPostcode}
+                                                            onChange={(e) => setCompanyPostcode(e.target.value)}
+                                                        />
+                                                    </Grid>
+
+                                                    <Grid item xs={12} sm={4}>
+                                                        <TextField
+                                                            label="Country"
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            value={companyCountry}
+                                                            onChange={(e) => setCompanyCountry(e.target.value)}
                                                         />
                                                     </Grid>
 

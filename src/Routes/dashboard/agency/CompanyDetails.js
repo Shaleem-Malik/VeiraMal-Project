@@ -23,7 +23,7 @@ const useStyles = makeStyles((theme) => ({
   uploadInput: { display: 'none' }
 }));
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5228';
+const API_BASE = process.env.REACT_APP_BASE_URL || 'http://localhost:5228';
 const api = axios.create({ baseURL: API_BASE, withCredentials: true });
 
 function isValidAbn(value) {
@@ -171,7 +171,7 @@ export default function CompanyDetails() {
       fd.append('file', selectedFile);
 
       // Use apiWithCompany – token and subCompanyId are added automatically
-      const res = await apiWithCompany.post(`${API_BASE}/api/Company/effective/logo`, fd);
+      const res = await apiWithCompany.post(`${API_BASE}Company/effective/logo`, fd);
 
       NotificationManager.success(res.data?.message || 'Logo uploaded.');
       await dispatch(fetchCompanyDetails());
@@ -198,7 +198,7 @@ export default function CompanyDetails() {
 
     setLogoDeleting(true);
     try {
-      const res = await apiWithCompany.delete(`${API_BASE}/api/Company/effective/logo`);
+      const res = await apiWithCompany.delete(`${API_BASE}Company/effective/logo`);
       NotificationManager.success(res.data?.message || 'Logo removed.');
       await dispatch(fetchCompanyDetails());
     } catch (err) {
