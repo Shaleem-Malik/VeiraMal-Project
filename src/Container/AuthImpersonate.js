@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5228";
-const api = axios.create({ baseURL: API_BASE, withCredentials: true });
+const API_BASE = process.env.REACT_APP_BASE_URL || "http://localhost:5228";
+const api = axios.create({ baseURL: API_BASE });
 
 export default function AuthImpersonate() {
   const [status, setStatus] = useState("starting"); // starting | working | error | done
@@ -24,7 +24,7 @@ export default function AuthImpersonate() {
         }
 
         // Post token to server (cookie-based flow expected)
-        const res = await api.post("/api/auth/impersonate/accept", { token }, { withCredentials: true });
+        const res = await api.post("auth/impersonate/accept", { token });
 
         // Server might return:
         // { redirectUrl }  (cookie flow: server set cookie)
