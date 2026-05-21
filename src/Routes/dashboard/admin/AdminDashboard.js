@@ -3,7 +3,7 @@ import axios from "axios";
 import "./AdminCompaniesPage.css"; // import custom styles
 
 const API_BASE = process.env.REACT_APP_BASE_URL || "http://localhost:5228";
-const api = axios.create({ baseURL: API_BASE, withCredentials: true });
+const api = axios.create({ baseURL: API_BASE });
 
 // Toast notifications component
 function Toast({ messages, onClose }) {
