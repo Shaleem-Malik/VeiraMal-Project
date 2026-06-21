@@ -408,7 +408,7 @@ export default function AdminCompaniesPage() {
                           {c.contactNumber || "—"} • {c.location || "—"}
                         </div>
                       </div>
-                      <div className="company-actions">
+                      {/* <div className="company-actions">
                         <button
                           onClick={e => {
                             e.stopPropagation();
@@ -421,13 +421,12 @@ export default function AdminCompaniesPage() {
                         <button
                           onClick={e => {
                             e.stopPropagation();
-                            /* edit modal placeholder */
                           }}
                           className="btn-edit"
                         >
                           Edit
                         </button>
-                      </div>
+                      </div> */}
                     </li>
                   ))}
                 </ul>
