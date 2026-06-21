@@ -181,9 +181,14 @@ function Signin(props) {
                         id="user-mail"
                         className="has-input input-lg"
                         placeholder="Enter Email Address"
-                        onChange={(event) => setEmail(event.target.value)}
+                        onChange={(event) => {
+                          setEmail(event.target.value);
+                          if (formErrors.email) {
+                            setFormErrors((prev) => ({ ...prev, email: '' }));
+                          }
+                        }}
                         onKeyDown={handleKeyDown}
-                        invalid={formErrors.email}
+                        invalid={!!formErrors.email}
                       />
                       <span className="has-icon">
                         <i className="ti-email"></i>
@@ -203,9 +208,14 @@ function Signin(props) {
                         id="pwd"
                         className="has-input input-lg"
                         placeholder="Password"
-                        onChange={(event) => setPassword(event.target.value)}
+                        onChange={(event) => {
+                          setPassword(event.target.value);
+                          if (formErrors.password) {
+                            setFormErrors((prev) => ({ ...prev, password: '' }));
+                          }
+                        }}
                         onKeyDown={handleKeyDown}
-                        invalid={formErrors.password}
+                        invalid={!!formErrors.password}
                       />
                       <span className="has-icon">
                         <i className="ti-lock"></i>
