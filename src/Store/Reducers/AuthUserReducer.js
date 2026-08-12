@@ -70,13 +70,22 @@ let authUser = (state = INIT_STATE, action) => {
             return { ...state, loading: false };
         
         case FORGOT_PASSWORD:
-            return { ...state, loading: true };
-        
-        case FORGOT_PASSWORD_SUCCESS:
-            return { ...state, loading: true };
+            return {
+                ...state,
+                loading: true,
+            };
 
-        case FORGOT_PASSWORD_FAILURE:
-            return { ...state, loading: true };
+            case FORGOT_PASSWORD_SUCCESS:
+            return {
+                ...state,
+                loading: false,
+            };
+
+            case FORGOT_PASSWORD_FAILURE:
+            return {
+                ...state,
+                loading: false,
+            };
 
         case CHANGE_PASSWORD:
             return { 

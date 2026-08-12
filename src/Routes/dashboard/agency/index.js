@@ -453,7 +453,7 @@ export default function AgencyDashboard({ match }) {
                   className={classes.textField}
                   variant="outlined"
                   InputLabelProps={{ className: classes.requiredLabel }}
-                  required
+                  // required
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -475,7 +475,7 @@ export default function AgencyDashboard({ match }) {
                   className={classes.textField}
                   variant="outlined"
                   InputLabelProps={{ className: classes.requiredLabel }}
-                  required
+                  // required
                 />
               </Grid>
             </Grid>
@@ -498,7 +498,7 @@ export default function AgencyDashboard({ match }) {
                   className={classes.textField}
                   variant="outlined"
                   InputLabelProps={{ className: classes.requiredLabel }}
-                  required
+                  // required
                 />
               </Grid>
               <Grid item xs={12} sm={4}>

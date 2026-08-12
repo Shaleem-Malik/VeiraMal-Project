@@ -202,6 +202,33 @@ const useStyles = makeStyles((theme) => ({
     border: `2px solid ${theme.palette.divider}`,
     fontWeight: 500,
   },
+  infoListCard: {
+    padding: theme.spacing(3),
+    marginBottom: theme.spacing(3),
+    borderRadius: 16,
+    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+  },
+  listHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+    marginBottom: theme.spacing(2),
+    fontWeight: 700,
+  },
+  chipWrap: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing(1),
+  },
+  metaChip: {
+    borderRadius: 8,
+    fontWeight: 500,
+  },
+  emptyText: {
+    color: theme.palette.text.secondary,
+    fontStyle: 'italic',
+  },
 }));
 
 /**
@@ -296,7 +323,7 @@ export default function QuickActionsContainer({ match }) {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'text/csv'
     ];
-    
+
     if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/)) {
       NotificationManager.error('Please upload a valid Excel or CSV file');
       return;
@@ -437,7 +464,7 @@ export default function QuickActionsContainer({ match }) {
               onOpenAddAccessLevel={() => setShowAccessLevelModal(true)}
               onOpenAddBusinessUnit={() => setShowBusinessUnitModal(true)}
               companyDetailsPath={companyDetailsPath}
-            //   onDownloadTemplate={handleDownloadTemplate}
+              //   onDownloadTemplate={handleDownloadTemplate}
               showTemplateDownload={true}
               uploadLoading={uploadLoading}
             />
@@ -445,53 +472,7 @@ export default function QuickActionsContainer({ match }) {
 
           {/* Information Section */}
           <div className={classes.infoSection}>
-            {/* <Paper className={classes.infoCard}>
-              <Typography variant="h5" gutterBottom color="primary">
-                🚀 Quick Actions Guide
-              </Typography>
-              <Typography variant="body1" paragraph>
-                Use these quick actions to efficiently manage your organization. All actions are designed to save you time and streamline your workflow.
-              </Typography>
-              
-              <Box mt={3}>
-                <Typography variant="h6" gutterBottom>
-                  📤 Upload Template
-                </Typography>
-                <Typography variant="body2" color="textSecondary" paragraph>
-                  Bulk upload employees using our Excel/CSV template. Download the template first, fill in employee details, and upload for quick processing.
-                </Typography>
-
-                <Typography variant="h6" gutterBottom>
-                  ➕ Add Employee
-                </Typography>
-                <Typography variant="body2" color="textSecondary" paragraph>
-                  Manually add individual employees to your organization. Fill in personal details, assign access levels, and assign to business units.
-                </Typography>
-
-                <Typography variant="h6" gutterBottom>
-                  🔐 Access Levels
-                </Typography>
-                <Typography variant="body2" color="textSecondary" paragraph>
-                  Create custom access levels to control what different users can see and do within your organization's system.
-                </Typography>
-
-                <Typography variant="h6" gutterBottom>
-                  🏢 Business Units
-                </Typography>
-                <Typography variant="body2" color="textSecondary" paragraph>
-                  Organize your employees into different business units for better management and reporting. Employees can belong to multiple units.
-                </Typography>
-
-                <Typography variant="h6" gutterBottom>
-                  ⚙️ Company Details
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Manage your company information, settings, and preferences in one centralized location.
-                </Typography>
-              </Box>
-            </Paper> */}
-
-            {/* Stats Card */}
+            {/* Current Status */}
             <Paper className={classes.infoCard}>
               <Typography variant="h5" gutterBottom color="primary">
                 📊 Current Status
@@ -515,13 +496,71 @@ export default function QuickActionsContainer({ match }) {
                 </Grid>
               </Grid>
             </Paper>
+
+            {/* Available Business Units */}
+            <Paper className={classes.infoListCard}>
+              <Typography variant="h6" className={classes.listHeader} color="primary">
+                <BusinessIcon fontSize="small" />
+                Available Business Units
+              </Typography>
+
+              <Box className={classes.chipWrap}>
+                {businessUnitsMeta.length > 0 ? (
+                  businessUnitsMeta.map((bu, index) => {
+                    const label = normalizeMetaLabel(bu);
+                    return (
+                      <Chip
+                        key={index}
+                        label={label}
+                        variant="outlined"
+                        color="primary"
+                        className={classes.metaChip}
+                      />
+                    );
+                  })
+                ) : (
+                  <Typography variant="body2" className={classes.emptyText}>
+                    No business units available
+                  </Typography>
+                )}
+              </Box>
+            </Paper>
+
+            {/* Available Access Levels */}
+            <Paper className={classes.infoListCard}>
+              <Typography variant="h6" className={classes.listHeader} color="secondary">
+                <SecurityIcon fontSize="small" />
+                Available Access Levels
+              </Typography>
+
+              <Box className={classes.chipWrap}>
+                {accessLevels.length > 0 ? (
+                  accessLevels.map((a, index) => {
+                    const label = normalizeMetaLabel(a);
+                    return (
+                      <Chip
+                        key={index}
+                        label={label}
+                        variant="outlined"
+                        color="secondary"
+                        className={classes.metaChip}
+                      />
+                    );
+                  })
+                ) : (
+                  <Typography variant="body2" className={classes.emptyText}>
+                    No access levels available
+                  </Typography>
+                )}
+              </Box>
+            </Paper>
           </div>
         </div>
       </Container>
 
       {/* Add Employee Modal */}
-      <Dialog 
-        open={showEmployeeModal} 
+      <Dialog
+        open={showEmployeeModal}
         onClose={() => setShowEmployeeModal(false)}
         maxWidth="md"
         fullWidth
@@ -554,7 +593,7 @@ export default function QuickActionsContainer({ match }) {
                   className={classes.textField}
                   variant="outlined"
                   InputLabelProps={{ className: classes.requiredLabel }}
-                  required
+                // required
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -576,7 +615,7 @@ export default function QuickActionsContainer({ match }) {
                   className={classes.textField}
                   variant="outlined"
                   InputLabelProps={{ className: classes.requiredLabel }}
-                  required
+                // required
                 />
               </Grid>
             </Grid>
@@ -599,7 +638,7 @@ export default function QuickActionsContainer({ match }) {
                   className={classes.textField}
                   variant="outlined"
                   InputLabelProps={{ className: classes.requiredLabel }}
-                  required
+                // required
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -659,7 +698,7 @@ export default function QuickActionsContainer({ match }) {
               <Typography variant="subtitle1" gutterBottom>
                 Business Units *
               </Typography>
-              
+
               {/* Search Box */}
               <TextField
                 fullWidth
@@ -737,14 +776,14 @@ export default function QuickActionsContainer({ match }) {
         </DialogContent>
 
         <DialogActions className={classes.modalActions}>
-          <Button 
+          <Button
             onClick={() => setShowEmployeeModal(false)}
             className={classes.cancelButton}
             startIcon={<CloseIcon />}
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleSaveEmployee}
             variant="contained"
             color="primary"
@@ -758,8 +797,8 @@ export default function QuickActionsContainer({ match }) {
       </Dialog>
 
       {/* Add Access Level Modal */}
-      <Dialog 
-        open={showAccessLevelModal} 
+      <Dialog
+        open={showAccessLevelModal}
         onClose={() => setShowAccessLevelModal(false)}
         maxWidth="sm"
         fullWidth
@@ -781,7 +820,7 @@ export default function QuickActionsContainer({ match }) {
             variant="outlined"
             placeholder="Enter access level name (e.g., 'Super Admin')"
             InputLabelProps={{ className: classes.requiredLabel }}
-            required
+          // required
           />
           <Box mt={2} p={2} bgcolor="info.light" borderRadius={8}>
             <Typography variant="body2" color="info.dark">
@@ -790,13 +829,13 @@ export default function QuickActionsContainer({ match }) {
           </Box>
         </DialogContent>
         <DialogActions className={classes.modalActions}>
-          <Button 
+          <Button
             onClick={() => setShowAccessLevelModal(false)}
             className={classes.cancelButton}
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleAddAccessLevel}
             variant="contained"
             color="primary"
@@ -809,8 +848,8 @@ export default function QuickActionsContainer({ match }) {
       </Dialog>
 
       {/* Add Business Unit Modal */}
-      <Dialog 
-        open={showBusinessUnitModal} 
+      <Dialog
+        open={showBusinessUnitModal}
         onClose={() => setShowBusinessUnitModal(false)}
         maxWidth="sm"
         fullWidth
@@ -832,7 +871,7 @@ export default function QuickActionsContainer({ match }) {
             variant="outlined"
             placeholder="Enter business unit name (e.g., 'Customer Support')"
             InputLabelProps={{ className: classes.requiredLabel }}
-            required
+          // required
           />
           <Box mt={2} p={2} bgcolor="info.light" borderRadius={8}>
             <Typography variant="body2" color="info.dark">
@@ -841,13 +880,13 @@ export default function QuickActionsContainer({ match }) {
           </Box>
         </DialogContent>
         <DialogActions className={classes.modalActions}>
-          <Button 
+          <Button
             onClick={() => setShowBusinessUnitModal(false)}
             className={classes.cancelButton}
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleAddBusinessUnit}
             variant="contained"
             color="primary"
