@@ -1,16 +1,12 @@
 // ForgotPassword.jsx
 import React, { useState } from 'react';
-import { useDispatch, useSelector  } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Button, AppBar, Toolbar } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { Form, FormGroup, Input } from 'reactstrap';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import QueueAnim from 'rc-queue-anim';
 import { Helmet } from "react-helmet";
-
-
-// components
-// import { SessionSlider } from 'Components/Widgets';
 
 // app config
 import AppConfig from 'Constants/AppConfig';
@@ -20,27 +16,36 @@ import { forgotPassword } from 'Store/Actions';
 
 function ForgotPassword(props) {
   const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
   const dispatch = useDispatch();
   const loading = useSelector(state => state.loading);
 
   const onSubmit = async (e) => {
     e && e.preventDefault();
-    const trimmed = String(email || '').trim();
-    if (!trimmed) {
-      // small client-side guard; server/action also validates and notifies
-      // we call NotificationManager directly to give immediate feedback
-      // but action will also notify on server message
-      // Import NotificationManager if you want to show here; otherwise rely on action notifications
-      // NotificationManager.error('Please enter your registered email address.');
+
+    // Prevent duplicate submissions
+    if (submitting || loading) {
       return;
     }
 
+    const trimmed = String(email || '').trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    setSubmitting(true);
+
     try {
       await dispatch(forgotPassword(trimmed, props.history));
-      // the action will show notifications and redirect if configured
+      // The action will show notifications and redirect if configured
     } catch (err) {
-      // action already displays errors; optional extra handling here
+      // Action already displays errors
       console.error('Forgot password dispatch error', err);
+    } finally {
+      // Re-enable only after the request has finished
+      setSubmitting(false);
     }
   };
 
@@ -52,9 +57,10 @@ function ForgotPassword(props) {
 
   return (
     <QueueAnim type="bottom" duration={2000}>
-        <Helmet>
-            <title>Forgot Password</title>
-        </Helmet>
+      <Helmet>
+        <title>Forgot Password</title>
+      </Helmet>
+
       <div className="rct-session-wrapper" key="forgot-root">
         {loading && <LinearProgress />}
 
@@ -67,9 +73,24 @@ function ForgotPassword(props) {
                     <h1 className='font-weight-bold text-dark'>HR Analytix</h1>
                   </Link>
                 </div>
+
                 <div>
-                  <Link to="/signin" className="mr-15 text-dark" style={{ textDecoration: 'none' }}>Sign In</Link>
-                  <Button variant="contained" className="btn-light" component={Link} to="/signin">Sign In</Button>
+                  <Link
+                    to="/signin"
+                    className="mr-15 text-dark"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    Sign In
+                  </Link>
+
+                  <Button
+                    variant="contained"
+                    className="btn-light"
+                    component={Link}
+                    to="/signin"
+                  >
+                    Sign In
+                  </Button>
                 </div>
               </div>
             </div>
@@ -90,7 +111,9 @@ function ForgotPassword(props) {
                 <div className="session-body text-center shadow">
                   <div className="session-head mb-30">
                     <h2 className="font-weight-bold">Reset your password</h2>
-                    <p className="mb-0">Enter your registered email — we'll send a temporary password to sign in.</p>
+                    <p className="mb-0">
+                      Enter your registered email — we'll send a temporary password to sign in.
+                    </p>
                   </div>
 
                   <Form onSubmit={onSubmit}>
@@ -105,7 +128,9 @@ function ForgotPassword(props) {
                         onChange={(event) => setEmail(event.target.value)}
                         required
                       />
-                      <span className="has-icon"><i className="ti-email"></i></span>
+                      <span className="has-icon">
+                        <i className="ti-email"></i>
+                      </span>
                     </FormGroup>
 
                     <FormGroup className="mb-15">
@@ -114,8 +139,8 @@ function ForgotPassword(props) {
                         className="btn-block text-white w-100"
                         variant="contained"
                         size="large"
-                        onClick={onSubmit}
-                        disabled={loading}
+                        type="submit"
+                        disabled={loading || submitting}
                       >
                         Send temporary password
                       </Button>
@@ -133,8 +158,20 @@ function ForgotPassword(props) {
                     </FormGroup>
                   </Form>
 
-                  <p className="text-muted mt-20">By using this service you agree to {AppConfig.brandName}</p>
-                  <p className="mb-0"><a target="_blank" rel="noreferrer" href="#/terms-condition" className="text-muted">Terms of Service</a></p>
+                  <p className="text-muted mt-20">
+                    By using this service you agree to {AppConfig.brandName}
+                  </p>
+
+                  <p className="mb-0">
+                    <a
+                      target="_blank"
+                      rel="noreferrer"
+                      href="#/terms-condition"
+                      className="text-muted"
+                    >
+                      Terms of Service
+                    </a>
+                  </p>
                 </div>
               </div>
 
@@ -142,7 +179,6 @@ function ForgotPassword(props) {
               {/* <div className="col-sm-5 col-md-5 col-lg-4">
                 <SessionSlider />
               </div> */}
-
             </div>
           </div>
         </div>

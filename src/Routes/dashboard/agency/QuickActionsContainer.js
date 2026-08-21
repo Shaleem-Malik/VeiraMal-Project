@@ -36,7 +36,8 @@ import {
   Email as EmailIcon,
   Security as SecurityIcon,
   Close as CloseIcon,
-  Check as CheckIcon
+  Check as CheckIcon,
+  Delete as DeleteIcon
 } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
 
@@ -45,6 +46,7 @@ import {
   uploadUsersExcel,
   addBusinessUnit,
   addAccessLevel,
+  deleteBusinessUnit,
   createUser,
   fetchBusinessUnits,
   fetchAccessLevels,
@@ -164,6 +166,29 @@ const useStyles = makeStyles((theme) => ({
   businessUnitItem: {
     padding: theme.spacing(0.5, 0),
   },
+  metaItem: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    padding: theme.spacing(0.75, 0),
+  },
+
+  metaItemContent: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: theme.spacing(1),
+  },
+
+  deleteMetaButton: {
+    marginLeft: theme.spacing(1),
+  },
+
+  confirmDeleteText: {
+    marginTop: theme.spacing(1),
+    color: theme.palette.text.secondary,
+  },
   selectedChips: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -257,6 +282,8 @@ export default function QuickActionsContainer({ match }) {
   const [showAccessLevelModal, setShowAccessLevelModal] = useState(false);
   const [showBusinessUnitModal, setShowBusinessUnitModal] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [deleteBusinessUnitDialogOpen, setDeleteBusinessUnitDialogOpen] = useState(false);
+  const [businessUnitToDelete, setBusinessUnitToDelete] = useState(null);
 
   // Form states
   const [newEmployee, setNewEmployee] = useState({
@@ -356,7 +383,14 @@ export default function QuickActionsContainer({ match }) {
       NotificationManager.success('Access level added successfully!');
     } catch (err) {
       console.error('Add access level error', err);
-      NotificationManager.error('Failed to add access level');
+
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.Message ||
+        err?.message ||
+        'Failed to add access level';
+
+      // NotificationManager.error(message);
     }
   };
 
@@ -374,7 +408,14 @@ export default function QuickActionsContainer({ match }) {
       NotificationManager.success('Business unit added successfully!');
     } catch (err) {
       console.error('Add business unit error', err);
-      NotificationManager.error('Failed to add business unit');
+
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.Message ||
+        err?.message ||
+        'Failed to add business unit';
+
+      // NotificationManager.error(message);
     }
   };
 
@@ -444,7 +485,53 @@ export default function QuickActionsContainer({ match }) {
     }
   };
 
+  const getBusinessUnitId = (businessUnit) => {
+    return (
+      businessUnit?.businessUnitId ??
+      businessUnit?.BusinessUnitId ??
+      businessUnit?.id ??
+      businessUnit?.Id
+    );
+  };
 
+  const openDeleteBusinessUnitDialog = (businessUnit) => {
+    setBusinessUnitToDelete(businessUnit);
+    setDeleteBusinessUnitDialogOpen(true);
+  };
+
+  const closeDeleteBusinessUnitDialog = () => {
+    setDeleteBusinessUnitDialogOpen(false);
+    setBusinessUnitToDelete(null);
+  };
+
+  const handleDeleteBusinessUnit = async () => {
+    if (!businessUnitToDelete) return;
+
+    const id = getBusinessUnitId(businessUnitToDelete);
+
+    if (!id) {
+      NotificationManager.error('Unable to identify the Business Unit.');
+      return;
+    }
+
+    try {
+      await dispatch(deleteBusinessUnit(id));
+
+      closeDeleteBusinessUnitDialog();
+
+      // Clear selected unit from employee form if it was selected
+      const deletedLabel = normalizeMetaLabel(businessUnitToDelete);
+
+      setNewEmployee(prev => ({
+        ...prev,
+        businessUnits: (prev.businessUnits || []).filter(
+          unit => unit !== deletedLabel
+        )
+      }));
+    } catch (err) {
+      console.error('Delete business unit error:', err);
+    }
+  };
   return (
     <div className={classes.root}>
       <Helmet>
@@ -504,18 +591,39 @@ export default function QuickActionsContainer({ match }) {
                 Available Business Units
               </Typography>
 
-              <Box className={classes.chipWrap}>
+              <Box>
                 {businessUnitsMeta.length > 0 ? (
                   businessUnitsMeta.map((bu, index) => {
                     const label = normalizeMetaLabel(bu);
+                    const id = getBusinessUnitId(bu);
+
                     return (
-                      <Chip
-                        key={index}
-                        label={label}
-                        variant="outlined"
-                        color="primary"
-                        className={classes.metaChip}
-                      />
+                      <Box key={id || index} className={classes.metaItem}>
+                        <Box className={classes.metaItemContent}>
+                          <BusinessIcon
+                            fontSize="small"
+                            color="primary"
+                          />
+
+                          <Chip
+                            label={label}
+                            variant="outlined"
+                            color="primary"
+                            className={classes.metaChip}
+                          />
+                        </Box>
+
+                        <IconButton
+                          size="small"
+                          color="secondary"
+                          className={classes.deleteMetaButton}
+                          onClick={() => openDeleteBusinessUnitDialog(bu)}
+                          disabled={!id || userState.loading}
+                          title={`Delete ${label}`}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
                     );
                   })
                 ) : (
@@ -894,6 +1002,64 @@ export default function QuickActionsContainer({ match }) {
             disabled={!newBusinessUnit.trim()}
           >
             Add Business Unit
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Delete Business Unit Confirmation */}
+      <Dialog
+        open={deleteBusinessUnitDialogOpen}
+        onClose={closeDeleteBusinessUnitDialog}
+        maxWidth="sm"
+        fullWidth
+        className={classes.modal}
+      >
+        <DialogTitle className={classes.modalHeader}>
+          <Typography className={classes.modalTitle}>
+            <DeleteIcon color="primary" />
+            Delete Business Unit
+          </Typography>
+
+          <IconButton onClick={closeDeleteBusinessUnitDialog}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent className={classes.modalContent}>
+          <Typography variant="body1">
+            Are you sure you want to delete the Business Unit
+            {' '}
+            <strong>
+              {normalizeMetaLabel(businessUnitToDelete)}
+            </strong>
+            ?
+          </Typography>
+
+          <Typography
+            variant="body2"
+            className={classes.confirmDeleteText}
+          >
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions className={classes.modalActions}>
+          <Button
+            onClick={closeDeleteBusinessUnitDialog}
+            className={classes.cancelButton}
+            startIcon={<CloseIcon />}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleDeleteBusinessUnit}
+            variant="contained"
+            color="secondary"
+            className={classes.actionButton}
+            startIcon={<DeleteIcon />}
+            disabled={userState.loading || !businessUnitToDelete}
+          >
+            Delete Business Unit
           </Button>
         </DialogActions>
       </Dialog>

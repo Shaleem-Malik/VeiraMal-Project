@@ -37,6 +37,10 @@ const ADD_BUSINESS_UNIT_REQUEST = "ADD_BUSINESS_UNIT_REQUEST";
 const ADD_BUSINESS_UNIT_SUCCESS = "ADD_BUSINESS_UNIT_SUCCESS";
 const ADD_BUSINESS_UNIT_FAILURE = "ADD_BUSINESS_UNIT_FAILURE";
 
+const DELETE_BUSINESS_UNIT_REQUEST = "DELETE_BUSINESS_UNIT_REQUEST";
+const DELETE_BUSINESS_UNIT_SUCCESS = "DELETE_BUSINESS_UNIT_SUCCESS";
+const DELETE_BUSINESS_UNIT_FAILURE = "DELETE_BUSINESS_UNIT_FAILURE";
+
 const FETCH_ACCESS_LEVELS_REQUEST = "FETCH_ACCESS_LEVELS_REQUEST";
 const FETCH_ACCESS_LEVELS_SUCCESS = "FETCH_ACCESS_LEVELS_SUCCESS";
 const FETCH_ACCESS_LEVELS_FAILURE = "FETCH_ACCESS_LEVELS_FAILURE";
@@ -87,6 +91,10 @@ export const fetchBusinessUnitsFailure = (error) => ({ type: FETCH_BUSINESS_UNIT
 export const addBusinessUnitRequest = () => ({ type: ADD_BUSINESS_UNIT_REQUEST });
 export const addBusinessUnitSuccess = (data) => ({ type: ADD_BUSINESS_UNIT_SUCCESS, payload: data });
 export const addBusinessUnitFailure = (error) => ({ type: ADD_BUSINESS_UNIT_FAILURE, payload: error });
+
+export const deleteBusinessUnitRequest = () => ({ type: DELETE_BUSINESS_UNIT_REQUEST });
+export const deleteBusinessUnitSuccess = (id) => ({ type: DELETE_BUSINESS_UNIT_SUCCESS, payload: id });
+export const deleteBusinessUnitFailure = (error) => ({ type: DELETE_BUSINESS_UNIT_FAILURE, payload: error });
 
 export const fetchAccessLevelsRequest = () => ({ type: FETCH_ACCESS_LEVELS_REQUEST });
 export const fetchAccessLevelsSuccess = (data) => ({ type: FETCH_ACCESS_LEVELS_SUCCESS, payload: data });
@@ -302,6 +310,44 @@ export const addBusinessUnit = (model) => async (dispatch) => {
     }
 };
 
+// DELETE: /api/metadata/businessunits/{id}
+export const deleteBusinessUnit = (id) => async (dispatch) => {
+    dispatch(deleteBusinessUnitRequest());
+
+    try {
+        const resp = await apiWithCompany.delete(
+            `${BASE_API}metadata/businessunits/${id}`
+        );
+
+        dispatch(deleteBusinessUnitSuccess(id));
+
+        NotificationManager.success(
+            resp?.data?.message ||
+            resp?.data?.Message ||
+            "Business unit deleted successfully"
+        );
+
+        // Refresh the list after deletion
+        dispatch(fetchBusinessUnits());
+
+        return resp.data;
+    } catch (err) {
+        const msg =
+            err?.response?.data?.message ||
+            err?.response?.data?.Message ||
+            err.message ||
+            "Failed to delete business unit";
+
+        dispatch(deleteBusinessUnitFailure(msg));
+
+        if (!msg.includes('multiple subcompany assignments')) {
+            NotificationManager.error(msg);
+        }
+
+        throw err;
+    }
+};
+
 // GET: /api/metadata/accesslevels
 export const fetchAccessLevels = () => async (dispatch) => {
     dispatch(fetchAccessLevelsRequest());
@@ -461,6 +507,26 @@ export default function userReducer(state = initialState, action) {
             return { ...state, loading: false, businessUnits: action.payload };
         case FETCH_BUSINESS_UNITS_FAILURE:
             return { ...state, loading: false, error: action.payload };
+
+        case DELETE_BUSINESS_UNIT_REQUEST:
+            return {
+                ...state,
+                loading: true,
+                error: null
+            };
+
+        case DELETE_BUSINESS_UNIT_SUCCESS:
+            return {
+                ...state,
+                loading: false
+            };
+
+        case DELETE_BUSINESS_UNIT_FAILURE:
+            return {
+                ...state,
+                loading: false,
+                error: action.payload
+            };
 
         case FETCH_ACCESS_LEVELS_REQUEST:
             return { ...state, loading: true };
