@@ -73,6 +73,12 @@ const AsynUserProfile = Loadable({
 	loading: () => <RctPageLoader />,
 });
 
+
+const AsyncHrAnalyticsDashboardComponent = Loadable({
+	loader:() => import("Routes/dashboard/hrAnalytics"),
+	loading: () => <RctPageLoader />,
+});
+
 const AsyncAdminDashboardComponent = Loadable({
 	loader:() => import("Routes/dashboard/admin/AdminDashboard"),
 	loading: () => <RctPageLoader />,
@@ -100,5 +106,6 @@ export {
 	AsynUserProfile,
 	AsyncLiabilityTrackerComponent,
 	AsyncAdminDashboardComponent,
+	AsyncHrAnalyticsDashboardComponent,
 	AsyncAdminSampleSheets
 };

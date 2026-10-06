@@ -18,6 +18,7 @@ import historyReducer from "./historyReducer";
 import companyReducer from "../Actions/companyActions";
 import userReducer from "../Actions/userActions"
 import liabilityReducer from "./liabilityReducer";
+import hrAnalyticsReducer from "./hrAnalyticsReducer";
 
 const Reducers = combineReducers({
    settings,
@@ -35,7 +36,8 @@ const Reducers = combineReducers({
    history: historyReducer,
    company : companyReducer,
    user : userReducer,
-   liabilities: liabilityReducer
+   liabilities: liabilityReducer,
+   hrAnalytics: hrAnalyticsReducer
 });
 
 export default Reducers;

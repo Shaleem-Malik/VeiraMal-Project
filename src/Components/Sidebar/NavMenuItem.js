@@ -110,25 +110,43 @@ function NavMenuItem(props) {
                           activeClassName="item-active"
                         >
 
-                          <span className="menu">
+                          <span 
+                            className="menu"
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              width: '100%',
+                              gap: '10px' 
+                            }}
+                          >
                             <IntlMessages
                               id={
                                 subMenu.menu_title
                               }
                             />
-                          </span>
 
-                          {subMenu.new_item &&
-                          subMenu.new_item ===
-                            true ? (
-                            <Chip
-                              label="new"
-                              className="new-item"
-                              color="secondary"
-                            />
-                          ) : (
-                            ''
-                          )}
+                            {subMenu.new_item &&
+                            subMenu.new_item ===
+                              true ? (
+                              <Chip
+                                size="small"
+                                label="Coming Soon"
+                                className="new-item"
+                                color="secondary"
+                                style={{ 
+                                  height: '20px', 
+                                  fontSize: '0.65rem',
+                                  position: 'static',
+                                  transform: 'none',
+                                  flexShrink: 0
+                                }}
+                              />
+                            ) : (
+                              ''
+                            )}
+
+                          </span>
 
                         </NavLink>
 
@@ -163,7 +181,16 @@ function NavMenuItem(props) {
                           className="list-item"
                         >
 
-                          <span className="menu">
+                          <span 
+                            className="menu"
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              width: '100%',
+                              gap: '10px' 
+                            }}
+                          >
                             <IntlMessages
                               id={
                                 subMenu.menu_title
@@ -174,9 +201,17 @@ function NavMenuItem(props) {
                             subMenu.new_item ===
                               true ? (
                               <Chip
-                                label="new"
+                                size="small"
+                                label="Coming Soon"
                                 className="new-item"
                                 color="secondary"
+                                style={{ 
+                                  height: '20px', 
+                                  fontSize: '0.65rem',
+                                  position: 'static',
+                                  transform: 'none',
+                                  flexShrink: 0
+                                }}
                               />
                             ) : null}
                           </span>
@@ -217,7 +252,16 @@ function NavMenuItem(props) {
                                       }
                                     >
 
-                                      <span className="menu pl-10 d-inline-block">
+                                      <span 
+                                        className="menu pl-10"
+                                        style={{ 
+                                          display: 'flex', 
+                                          alignItems: 'center', 
+                                          justifyContent: 'space-between',
+                                          width: '100%',
+                                          gap: '10px' 
+                                        }}
+                                      >
 
                                         <IntlMessages
                                           id={
@@ -229,9 +273,17 @@ function NavMenuItem(props) {
                                         nestedMenu.new_item ===
                                           true ? (
                                           <Chip
-                                            label="new"
+                                            size="small"
+                                            label="Coming Soon"
                                             className="new-item"
                                             color="secondary"
+                                            style={{ 
+                                              height: '20px', 
+                                              fontSize: '0.65rem',
+                                              position: 'static',
+                                              transform: 'none',
+                                              flexShrink: 0
+                                            }}
                                           />
                                         ) : null}
 

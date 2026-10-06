@@ -22,9 +22,9 @@ export const getCompanyQueryParams = () => {
   return {};
 };
 
-export const apiRequest = async (method, url, data = null) => {
+export const apiRequest = async (method, url, data = null, extraParams = {}) => {
   const headers = getAuthHeaders();
-  const params = getCompanyQueryParams();
+  const params = { ...getCompanyQueryParams(), ...(extraParams || {}) };
 
   const config = {
     method,

@@ -17,6 +17,7 @@ import {
    AsynUserProfile,
    AsyncLiabilityTrackerComponent,
    AsyncAdminDashboardComponent,
+   AsyncHrAnalyticsDashboardComponent,
    AsyncAdminSampleSheets
 } from 'Components/AsyncComponent/AsyncComponent';
 
@@ -35,6 +36,7 @@ const Dashboard = ({ match }) => (
          <Route path={`${match.url}/subcompanies-management`} component={AsynSubCompaniesManagement} />
          <Route path={`${match.url}/user-profile`} component={AsynUserProfile} />
          <Route path={`${match.url}/admin`} component={AsyncAdminDashboardComponent} />
+         <Route path={`${match.url}/hr-analytics`} component={AsyncHrAnalyticsDashboardComponent} />
          <Route path={`${match.url}/admin-sample-sheets`} component={AsyncAdminSampleSheets} />
       </Switch>
    </div>

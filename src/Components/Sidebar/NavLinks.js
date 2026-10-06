@@ -8,9 +8,57 @@ let sidebarMenu = {
          "new_item": false,
          "child_routes": [
             {
-               "menu_title": "HR Dashboard",
+               "path": "/app/dashboard/hr-analytics/overview",
                "new_item": false,
-               "path": "/app/dashboard/ecommerce",
+               "menu_title": "Overview",
+               "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/hr-analytics/workforce-diversity",
+               "new_item": false,
+               "menu_title": "Workforce & Diversity",
+               "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/hr-analytics/attrition-retention",
+               "new_item": false,
+               "menu_title": "Attrition & Retention",
+               "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/hr-analytics/settings",
+               "new_item": false,
+               "menu_title": "Settings",
+               "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/hr-analytics/labour-cost",
+               "new_item": true,
+               "menu_title": "Labour Cost",
+               "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/hr-analytics/absenteeism",
+               "new_item": true,
+               "menu_title": "Absenteeism",
+               "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/hr-analytics/recruitment",
+               "new_item": true,
+               "menu_title": "Recruitment",
+               "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/hr-analytics/performance",
+               "new_item": true,
+               "menu_title": "Performance",
+               "roles": ["superUser"]
+            },
+            {
+               "path": "/app/dashboard/hr-analytics/scenario-modelling",
+               "new_item": true,
+               "menu_title": "Scenario Modelling",
                "roles": ["superUser"]
             },
             {
@@ -27,7 +75,7 @@ let sidebarMenu = {
             },
             {
                "path": "/app/dashboard/news",
-               "new_item": true,
+               "new_item": false,
                "menu_title": "Liability Tracker",
                "roles": ["superUser"]
             },

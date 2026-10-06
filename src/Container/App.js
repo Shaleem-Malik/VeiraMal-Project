@@ -33,12 +33,20 @@ function App(props) {
 
    const basePath = process.env.PUBLIC_URL;
 
+   const normalizedAccess = String(localStorage.getItem('access') || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+
+   const defaultAuthenticatedPath = normalizedAccess === 'superuser'
+      ? `${basePath}/app/dashboard/hr-analytics/overview`
+      : `${basePath}/app/dashboard/ecommerce`;
+
    if (
       location.pathname === '/' ||
       location.pathname === `${basePath}/`
    ) {
       return (
-         <Redirect to={isAuthenticated ? `${basePath}/app/dashboard/ecommerce` : `${basePath}/signin`} />
+         <Redirect to={isAuthenticated ? defaultAuthenticatedPath : `${basePath}/signin`} />
       );
    }
 

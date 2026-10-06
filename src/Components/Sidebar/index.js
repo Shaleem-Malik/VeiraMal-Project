@@ -166,13 +166,13 @@ class Sidebar extends Component {
                 className="rct-scroll"
                 autoHide
                 autoHideDuration={100}
-                style={{ height: 'calc(100vh - 140px)' }}
+                style={{ height: 'calc(100vh)' }}  //-140px for upgrade plan button, but we removed it for now
               >
                 <UserBlock />
                 {!agencySidebar ? <SidebarContent /> : <AgencySidebar />}
               </Scrollbars>
 
-              <div className="sidebar-footer p-3 border-top">
+              {/* <div className="sidebar-footer p-3 border-top">
                 <Button
                   fullWidth
                   variant="contained"
@@ -193,7 +193,7 @@ class Sidebar extends Component {
                 >
                   Upgrade Plan
                 </Button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

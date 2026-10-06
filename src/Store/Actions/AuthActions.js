@@ -257,7 +257,7 @@ const routeBasedOnAccess = (access, history, isFirstLogin = false) => {
     if (isFirstLogin) {
       history.push('/app/dashboard/agency');
     } else {
-      history.push('/app/dashboard/ecommerce');
+      history.push('/app/dashboard/hr-analytics/overview');
     }
   } else if (
     normalizedAccess === 'team manager' ||
